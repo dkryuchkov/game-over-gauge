@@ -1,0 +1,50 @@
+name: Update Gauge Daily
+
+on:
+  schedule:
+    - cron: "15 9 * * *"   # 09:15 UTC daily
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          if [ -f app/requirements.txt ]; then
+            python -m pip install --upgrade pip
+            pip install -r app/requirements.txt
+          else
+            echo "No app/requirements.txt; skipping Python deps."
+          fi
+
+      - name: Run gauge
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          if [ -f app/game_over_gauge.py ]; then
+            python app/game_over_gauge.py || echo "Gauge run failed (non-fatal first run)."
+            if [ -f app/dashboard.html ]; then cp app/dashboard.html public/dashboard.html; fi
+            if [ -f app/gauge.json ]; then cp app/gauge.json public/gauge.json; fi
+          else
+            echo "app/game_over_gauge.py missing; skipping run."
+          fi
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/dashboard.html public/gauge.json || true
+          git diff --staged --quiet || git commit -m "auto: daily gauge update"
+          git push
