@@ -214,38 +214,63 @@ def html_template() -> Template:
   <title>Game Over Gauge</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
+    :root { --needle-deg: {{ needle_deg }}deg; }
+
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; color: #111; }
     .gauge-wrap { display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+
     .gauge {
-      width: 220px; height: 110px; position: relative; overflow: hidden; border-top-left-radius: 220px; border-top-right-radius: 220px;
+      position: relative;
+      width: 260px; height: 130px;
+      overflow: hidden;
+      border-top-left-radius: 260px; border-top-right-radius: 260px;
       background: linear-gradient(90deg, #16a34a 0%, #f59e0b 50%, #dc2626 100%);
     }
-    .gauge:after {
-      content:""; position:absolute; left:50%; bottom:-10px; transform:translateX(-50%);
-      width: 200px; height: 200px; background: #fff; border-radius: 50%;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.1) inset;
+    /* inner white “mask” (drawn UNDER the needle now) */
+    .gauge::after {
+      content:"";
+      position:absolute; left:50%; bottom:-14px; transform:translateX(-50%);
+      width: 236px; height: 236px; background: #fff; border-radius: 50%;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.08) inset;
+      z-index: 1; /* below needle */
     }
+    /* the pointer */
     .needle {
-      position:absolute; left:50%; bottom:0; width:2px; height:110px; background:#111;
+      position:absolute; left:50%; bottom:0;
+      width:2px; height:130px; background:#111;
       transform-origin: bottom center;
+      transform: rotate(var(--needle-deg));
+      z-index: 2; /* above mask */
     }
+    /* little cap to hide the pivot */
+    .cap {
+      position:absolute; left:50%; bottom:0; transform:translate(-50%, 6px);
+      width:14px; height:14px; background:#111; border-radius:50%;
+      z-index: 3;
+      box-shadow: 0 0 0 3px #fff; /* ring so it sits cleanly on the mask */
+    }
+
     .score { font-size: 28px; font-weight: 700; }
     table { border-collapse: collapse; width: 100%; margin-top: 16px; }
     th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
     th { background:#f5f5f5; text-align:left; }
     .meta { color:#555; font-size: 12px; margin-top:8px; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   </style>
 </head>
 <body>
   <h1>Game Over Gauge</h1>
-  <div class="gauge-wrap">
-    <div class="gauge">
-      <div class="needle" style="transform: rotate({{ needle_deg }}deg)"></div>
+
+  <div class="gauge-wrap" role="group" aria-labelledby="gauge-title">
+    <div class="gauge" aria-hidden="true">
+      <div class="needle"></div>
+      <div class="cap"></div>
     </div>
     <div>
-      <div class="score">{{ total_score|round(1) }}%</div>
+      <div id="gauge-title" class="score">{{ total_score|round(1) }}%</div>
       <div class="meta">As of {{ timestamp }} (UTC)</div>
       <div class="meta">Trend penalty applied: {{ trend_penalty|round(1) }} pts</div>
+      <div class="sr-only" aria-live="polite">Gauge pointer at {{ total_score|round(1) }} percent.</div>
     </div>
   </div>
 
@@ -273,6 +298,7 @@ def html_template() -> Template:
 </body>
 </html>
     """)
+
 
 def degree_from_score(score: float) -> float:
     # 0% => -90deg; 100% => +90deg
