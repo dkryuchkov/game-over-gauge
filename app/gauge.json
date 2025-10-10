@@ -1,6 +1,6 @@
 {
-  "timestamp_utc": "2025-10-10 07:33:18",
-  "total_score_percent": 29.0,
+  "timestamp_utc": "2025-10-10 19:53:56",
+  "total_score_percent": 29.1,
   "trend_penalty": 0.0,
   "band": "Cautious",
   "components": [
@@ -20,16 +20,16 @@
     },
     {
       "name": "High Yield OAS (%, BofA ICE)",
-      "latest": "2.84%",
-      "change": "0.04%",
+      "latest": "2.95%",
+      "change": "0.15%",
       "score": 0.0,
       "weight": 0.3
     },
     {
       "name": "VIX (index)",
-      "latest": "16.3",
-      "change": "-0.3",
-      "score": 13.030303030303033,
+      "latest": "16.4",
+      "change": "-0.2",
+      "score": 13.424242424242424,
       "weight": 0.15
     },
     {
@@ -40,6 +40,6 @@
       "weight": 0.1
     }
   ],
-  "explanation": "The market is in a cautious state, with mixed signals across key indicators. While long-term borrowing costs are stable, stress in the high-yield debt market is elevated, and overall market volatility remains low. Given this environment, it's a sensible time to review your portfolio and ensure it is well-diversified to manage potential risks.",
+  "explanation": "The market's cautious score reflects mixed signals. Bond yields are stable, but high-yield credit spreads are tight and volatility is low, suggesting complacency. This environment calls for prudence\u2014consider diversifying and maintaining some liquidity to cushion against potential shifts.",
   "explanation_source": "deepseek-sdk"
 }
