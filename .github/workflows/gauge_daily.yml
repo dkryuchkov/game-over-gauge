@@ -1,0 +1,78 @@
+name: Daily Gauge + Netlify
+on:
+  schedule:
+    - cron: "30 9 * * *"
+  workflow_dispatch: {}
+concurrency:
+  group: gauge-daily
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONUNBUFFERED: "1"
+      NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install deps
+        if: hashFiles('app/requirements.txt') != ''
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app/requirements.txt
+      - name: Build gauge
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -f app/game_over_gauge.py ]; then
+            python app/game_over_gauge.py
+            mkdir -p public
+            [ -f app/dashboard.html ] && cp -f app/dashboard.html public/dashboard.html
+            [ -f app/gauge.json ] && cp -f app/gauge.json public/gauge.json
+          else
+            echo "app/game_over_gauge.py not found; skipping compute."
+          fi
+      - name: Commit & push Pages content
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/dashboard.html public/gauge.json || true
+          git diff --staged --quiet || (git commit -m "auto: daily gauge update" && git push)
+      - name: Deploy to Netlify (REST)
+        if: env.NETLIFY_TOKEN != '' && env.NETLIFY_SITE_ID != ''
+        run: |
+          set -euo pipefail
+          test -d public || { echo "public/ not found"; exit 1; }
+          ZIPFILE="$(mktemp /tmp/netlify_deploy.XXXXXX.zip)"
+          (cd public && zip -qr "$ZIPFILE" .)
+          DEPLOY_JSON="$(curl -fsS -X POST \
+            -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
+            -H "Content-Type: application/zip" \
+            --data-binary @"$ZIPFILE" \
+            "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/deploys")"
+          rm -f "$ZIPFILE" || true
+          echo "$DEPLOY_JSON" | jq -e .id >/dev/null
+          DEPLOY_ID="$(echo "$DEPLOY_JSON" | jq -r .id)"
+          echo "Deploy created: $DEPLOY_ID"
+          for i in $(seq 1 40); do
+            STATE="$(curl -fsS -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
+              "https://api.netlify.com/api/v1/deploys/${DEPLOY_ID}" | jq -r .state)"
+            echo "State: $STATE"
+            [ "$STATE" = "ready" ] && break
+            sleep 3
+          done
