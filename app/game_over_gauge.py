@@ -10,6 +10,13 @@ import numpy as np
 from dotenv import load_dotenv
 from jinja2 import Template
 
+# Try the OpenAI SDK (DeepSeek is OpenAI-compatible)
+try:
+    from openai import OpenAI  # type: ignore
+    HAS_OPENAI = True
+except Exception:
+    HAS_OPENAI = False
+
 # =========================
 # Logging
 # =========================
@@ -64,7 +71,7 @@ MAX_TREND_PENALTY = 10.0
 DEFAULT_OUTPUT_HTML = os.getenv("OUTPUT_HTML", "dashboard.html")
 DEFAULT_OUTPUT_JSON = os.getenv("OUTPUT_JSON", "gauge.json")
 
-USER_AGENT = {"User-Agent": "game-over-gauge/2.2 (+local)"}
+USER_AGENT = {"User-Agent": "game-over-gauge/2.4 (+local)"}
 
 # =========================
 # Gauge bands
@@ -135,18 +142,11 @@ def latest_and_change(df: pd.DataFrame, days: int = TREND_LOOKBACK_DAYS) -> Tupl
 # SVG geometry
 # =========================
 def degree_from_score(score: float) -> float:
-    """
-    0..100 across the TOP semicircle, left→right:
-      0% -> 180°, 50% -> 90°, 100% -> 0°.
-    (Used for bands/ticks/labels.)
-    """
+    """Map 0..100 across the top semicircle (left→right): 0%->180°, 100%->0°."""
     return 180.0 - (score / 100.0) * 180.0
 
 def needle_rotation_deg(score: float) -> float:
-    """
-    Needle rotates relative to vertical (up):
-      0% -> -90°, 50% -> 0°, 100% -> +90°.
-    """
+    """Needle relative to vertical: 0%->-90°, 50%->0°, 100%->+90°."""
     return (score / 100.0) * 180.0 - 90.0
 
 def _polar(cx: float, cy: float, r: float, deg: float) -> Tuple[float, float]:
@@ -159,12 +159,10 @@ def donut_segment_path(cx: float, cy: float, r_outer: float, r_inner: float,
     ox2, oy2 = _polar(cx, cy, r_outer, end_deg)
     ix2, iy2 = _polar(cx, cy, r_inner, end_deg)
     ix1, iy1 = _polar(cx, cy, r_inner, start_deg)
-
     delta = abs(end_deg - start_deg)
     large = 1 if delta > 180 else 0
-    sweep_outer = 1 if end_deg < start_deg else 0  # clockwise across top
+    sweep_outer = 1 if end_deg < start_deg else 0
     sweep_inner = 1 - sweep_outer
-
     return (
         f"M {ox1:.3f},{oy1:.3f} "
         f"A {r_outer:.3f},{r_outer:.3f} 0 {large} {sweep_outer} {ox2:.3f},{oy2:.3f} "
@@ -185,8 +183,7 @@ def band_paths(cx: float, cy: float, r_outer: float, r_inner: float) -> List[Dic
     for b in BANDS:
         sd, ed = degree_from_score(b["lo"]), degree_from_score(b["hi"])
         d = donut_segment_path(cx, cy, r_outer, r_inner, sd, ed)
-        out.append({"d": d, "color": b["color"], "name": b["name"], "lo": b["lo"], "hi": b["hi"],
-                    "sd": sd, "ed": ed})
+        out.append({"d": d, "color": b["color"], "name": b["name"], "lo": b["lo"], "hi": b["hi"], "sd": sd, "ed": ed})
     return out
 
 def band_for(score: float) -> Dict[str, str]:
@@ -196,53 +193,31 @@ def band_for(score: float) -> Dict[str, str]:
     return BANDS[-1]
 
 # =========================
-# Explanations (deterministic + DeepSeek)
+# Explanations (SDK + REST + fallback)
 # =========================
-def plain_english_summary(score: float, penalty: float) -> Tuple[str, str]:
-    b = band_for(score)
-    name = b["name"]
-    if name == "Safe":
-        text = ("Markets look calm. Stay the course. "
-                "Avoid big, sudden bets. Keep any single stock/sector/currency under ~25%.")
-    elif name == "Cautious":
-        text = ("Some pressure is building. Keep diversified and trim big positions. "
-                "‘Over-concentration’ means too much in one thing — e.g., >40% in one stock, one sector (like tech), "
-                "or one currency (all USD). Spread across assets, sectors and 2–3 currencies.")
-    elif name == "Risky":
-        text = ("Risk is rising. Reduce speculative names, add cash/short-duration bonds, and consider hedges. "
-                "Keep single positions well below 20%.")
-    elif name == "Nearly Crash":
-        text = ("Stress is high. Go defensive: quality balance sheets, short-duration bonds, cash liquidity. "
-                "Avoid leverage and illiquid small caps.")
-    else:
-        text = ("Severe stress. Expect disorderly moves. Focus on capital preservation, liquidity, "
-                "and counterparty safety.")
+def _fallback_summary(score: float, penalty: float) -> str:
+    b = band_for(score)["name"]
+    base = {
+        "Safe": "Markets look calm. Stay the course. Keep position sizes sensible and avoid big, sudden bets.",
+        "Cautious": "Some pressure is building. Stay diversified and trim oversized positions.",
+        "Risky": "Risk is rising. Reduce speculative names, add cash/short-duration bonds, consider simple hedges.",
+        "Nearly Crash": "Stress is high. Go defensive, prioritize liquidity and quality.",
+        "Game Over": "Severe stress. Focus on capital preservation, liquidity, and counterparty safety."
+    }[b]
     trend = "" if penalty <= 0.05 else f" Recent 5-day deterioration added a {penalty:.1f}-point penalty."
-    return name, text + trend
+    return base + trend
 
-DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions"
+DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+DEEPSEEK_TIMEOUT = int(os.getenv("DEEPSEEK_TIMEOUT", "20"))
+DEEPSEEK_RETRIES = int(os.getenv("DEEPSEEK_RETRIES", "2"))
+DEEPSEEK_REQUIRE = os.getenv("DEEPSEEK_REQUIRE", "true").lower() in ("1","true","yes","y")
 
-def deepseek_generate_comment(
-    api_key: str,
-    score: float,
-    band_name: str,
-    penalty: float,
-    components: List[Dict[str, object]],
-    timeout_s: int = 20,
-    retries: int = 2
-) -> Optional[str]:
+def _sdk_generate_comment(api_key: str, score: float, band_name: str, penalty: float, components: List[Dict[str, object]]) -> str:
     """
-    Ask DeepSeek (OpenAI-compatible API) for a concise, vivid explanation.
-    Returns text or None on failure.
+    Use OpenAI SDK against DeepSeek's OpenAI-compatible endpoint.
     """
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT["User-Agent"],
-    }
-
-    # Prepare compact component summary for the prompt
+    # Compact component summary for the prompt
     comp_lines = []
     for c in components:
         try:
@@ -253,52 +228,87 @@ def deepseek_generate_comment(
 
     system = (
         "You are a market explainer. Speak to a broad audience in crisp, vivid language. "
-        "Be accurate, non-alarmist. Keep it to 2–3 short sentences. "
-        "Explain what the score means, what’s driving it, and a sensible action bias "
-        "(diversify, trim risk, raise liquidity), without giving personalized financial advice."
+        "Be accurate and calm. Use 2–3 short sentences. Explain the score’s meaning, key drivers, "
+        "and a sensible action bias (diversify, trim risk, raise liquidity) without personal advice."
     )
     user = (
         f"Gauge score: {score:.1f}% ({band_name}). Trend penalty in last 5 days: {penalty:.1f} pts.\n"
         f"Components:\n{comp_blob}\n\n"
-        "Write a brief plain-English status: 2–3 sentences, max ~70 words total. "
-        "Avoid jargon. Don’t mention this is AI generated."
+        "Write a brief plain-English status: 2–3 sentences, ~70 words max. Avoid jargon."
     )
 
+    client = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL, timeout=DEEPSEEK_TIMEOUT)
+    resp = client.chat.completions.create(
+        model=DEEPSEEK_MODEL,
+        messages=[{"role":"system","content":system},{"role":"user","content":user}],
+        temperature=0.35,
+        max_tokens=180,
+        top_p=0.9,
+        stream=False,
+    )
+    content = (resp.choices[0].message.content or "").strip()
+    if not content:
+        raise RuntimeError("DeepSeek SDK returned empty content")
+    return " ".join(content.split())
+
+def _rest_generate_comment(api_key: str, score: float, band_name: str, penalty: float, components: List[Dict[str, object]]) -> str:
+    """
+    REST fallback (curl-equivalent) if SDK is unavailable. Uses /chat/completions.
+    """
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT["User-Agent"],
+    }
+    comp_lines = []
+    for c in components:
+        try:
+            comp_lines.append(f"- {c['name']}: score {c['score']:.1f}, latest {c['latest']}, 5D Δ {c['change']}")
+        except Exception:
+            pass
+    comp_blob = "\n".join(comp_lines) if comp_lines else "(no details)"
+
+    system = (
+        "You are a market explainer. Speak to a broad audience in crisp, vivid language. "
+        "Be accurate and calm. Use 2–3 short sentences. Explain the score’s meaning, key drivers, "
+        "and a sensible action bias (diversify, trim risk, raise liquidity) without personal advice."
+    )
+    user = (
+        f"Gauge score: {score:.1f}% ({band_name}). Trend penalty in last 5 days: {penalty:.1f} pts.\n"
+        f"Components:\n{comp_blob}\n\n"
+        "Write a brief plain-English status: 2–3 sentences, ~70 words max. Avoid jargon."
+    )
     payload = {
         "model": DEEPSEEK_MODEL,
         "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
+            {"role":"system","content":system},
+            {"role":"user","content":user},
         ],
         "temperature": 0.35,
         "max_tokens": 180,
         "top_p": 0.9,
     }
-
-    for attempt in range(retries + 1):
+    url = f"{DEEPSEEK_BASE_URL}/chat/completions"
+    last_err = None
+    for attempt in range(DEEPSEEK_RETRIES + 1):
         try:
-            resp = requests.post(
-                DEEPSEEK_CHAT_URL,
-                headers=headers,
-                json=payload,
-                timeout=timeout_s,
-            )
-            if resp.status_code >= 500:
-                raise RuntimeError(f"DeepSeek 5xx: {resp.status_code}")
-            resp.raise_for_status()
+            resp = requests.post(url, headers=headers, json=payload, timeout=DEEPSEEK_TIMEOUT)
+            if resp.status_code >= 400:
+                short = resp.text[:400] + ("..." if len(resp.text) > 400 else "")
+                raise RuntimeError(f"HTTP {resp.status_code}: {short}")
             data = resp.json()
-            # OpenAI-compatible shape
-            content = data.get("choices", [{}])[0].get("message", {}).get("content")
+            content = (data.get("choices") or [{}])[0].get("message", {}).get("content")
             if content and isinstance(content, str):
-                # Normalize whitespace
                 return " ".join(content.split())
-            return None
+            raise RuntimeError("DeepSeek REST returned empty content")
         except Exception as e:
-            logging.warning(f"DeepSeek call failed (attempt {attempt+1}/{retries+1}): {e}")
-            if attempt < retries:
-                time.sleep(1.5 * (attempt + 1))
+            last_err = str(e)
+            logging.warning("DeepSeek REST error (attempt %d/%d): %s", attempt+1, DEEPSEEK_RETRIES+1, last_err)
+            if attempt < DEEPSEEK_RETRIES:
+                time.sleep(1.5*(attempt+1))
             else:
-                return None
+                raise
+    raise RuntimeError(last_err or "Unknown DeepSeek REST failure")
 
 # =========================
 # HTML template
@@ -333,6 +343,7 @@ def html_template() -> Template:
     .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; margin-left:8px; }
     .muted { color:#555; font-size:12px; }
     .explain { margin-top:10px; font-size:14px; line-height:1.5; white-space:pre-wrap; }
+    .source { margin-top:6px; font-size:12px; color:#6b7280; }
 
     table { border-collapse: collapse; width: 100%; margin-top: 18px; }
     th, td { border:1px solid #e5e7eb; padding:8px; font-size: 14px; }
@@ -392,6 +403,7 @@ def html_template() -> Template:
         </div>
         <div class="muted">As of {{ timestamp }} (UTC). Trend penalty applied: {{ trend_penalty|round(1) }} pts.</div>
         <div class="explain">{{ explanation }}</div>
+        <div class="source">explanation_source: <strong>{{ explanation_source }}</strong></div>
       </div>
     </div>
 
@@ -440,8 +452,7 @@ def _read_nyfed_tp_csv(text: str) -> pd.DataFrame:
             if date_col is None: continue
             tp_col = None
             for c in df.columns:
-                if str(c).upper().replace(" ","") in ("ACMTP10","ACMTP_10Y","TP10","ACMTP10_"):
-                    tp_col = c; break
+                if str(c).upper().replace(" ","") in ("ACMTP10","ACMTP_10Y","TP10","ACMTP10_"): tp_col = c; break
             if tp_col is None:
                 candidates=[c for c in df.columns if c!=date_col]
                 best=None; best_ratio=-1.0
@@ -582,13 +593,11 @@ def main():
     r_outer, r_inner = 230.0, 180.0
     r_center = (r_outer + r_inner) / 2.0
     paths = band_paths(cx, cy, r_outer, r_inner)
-
-    # Curved label paths
     for i, p in enumerate(paths):
         p["label_path_id"] = f"bandlbl_{i}"
         p["label_path_d"] = arc_path(cx, cy, r_center, p["sd"], p["ed"])
 
-    # Ticks 0 / 50 / 100
+    # Ticks
     def tick_at(pct: float):
         deg=degree_from_score(pct)
         x1,y1=_polar(cx,cy,r_inner-4,deg)
@@ -602,18 +611,32 @@ def main():
     band = band_for(total_score)
     band_name = band["name"]; band_color = band["color"]
 
-    # DeepSeek AI blurb (with fallback)
-    ai_text = None
     ds_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
-    if ds_key:
+    explanation_source = "local"
+    explanation_text: str
+
+    if not ds_key:
+        logging.warning("DEEPSEEK_API_KEY not set; using local fallback text.")
+        explanation_text = _fallback_summary(total_score, penalty)
+    else:
         try:
-            ai_text = deepseek_generate_comment(
-                ds_key, total_score, band_name, penalty, rows, timeout_s=20, retries=2
-            )
+            if HAS_OPENAI:
+                print("Calling deepseek..............................")
+                explanation_text = _sdk_generate_comment(ds_key, total_score, band_name, penalty, rows)
+                explanation_source = "deepseek-sdk"
+            else:
+                if DEEPSEEK_REQUIRE:
+                    raise RuntimeError("openai SDK not installed but DEEPSEEK_REQUIRE=true; run: pip install openai")
+                logging.warning("openai SDK not installed; using REST fallback.")
+                explanation_text = _rest_generate_comment(ds_key, total_score, band_name, penalty, rows)
+                explanation_source = "deepseek-rest"
         except Exception as e:
-            logging.warning(f"DeepSeek integration error: {e}")
-    if not ai_text:
-        _, ai_text = plain_english_summary(total_score, penalty)
+            logging.warning("DeepSeek failed: %s", e)
+            if DEEPSEEK_REQUIRE:
+                logging.error("DEEPSEEK_REQUIRE=true; aborting build because DeepSeek failed.")
+                raise
+            explanation_text = _fallback_summary(total_score, penalty)
+            explanation_source = "local"
 
     out_obj = {
         "timestamp_utc": ts,
@@ -621,8 +644,8 @@ def main():
         "trend_penalty": round(penalty, 2),
         "band": band_name,
         "components": rows,
-        "explanation": ai_text,
-        "explanation_source": "deepseek" if ai_text and ds_key else "local",
+        "explanation": explanation_text,
+        "explanation_source": explanation_source,
     }
     print(json.dumps(out_obj, indent=2))
 
@@ -635,16 +658,20 @@ def main():
         timestamp=ts, rows=rows,
         needle_deg=needle_rotation_deg(total_score),
         band_paths=paths, tick_marks=tick_marks,
-        band_name=band_name, band_color=band_color, explanation=ai_text,
+        band_name=band_name, band_color=band_color,
+        explanation=explanation_text, explanation_source=explanation_source,
     )
     with open(DEFAULT_OUTPUT_HTML, "w", encoding="utf-8") as f:
         f.write(html)
 
-    logging.info(f"Gauge: {total_score:.1f}% ({band_name}) | JSON: {DEFAULT_OUTPUT_JSON} | HTML: {DEFAULT_OUTPUT_HTML} | explainer={'deepseek' if ai_text and ds_key else 'local'}")
+    logging.info(
+        "Gauge: %.1f%% (%s) | explainer=%s | JSON=%s | HTML=%s",
+        total_score, band_name, explanation_source, DEFAULT_OUTPUT_JSON, DEFAULT_OUTPUT_HTML
+    )
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        logging.exception(f"Fatal error: {e}")
+        logging.exception("Fatal error: %s", e)
         sys.exit(2)
