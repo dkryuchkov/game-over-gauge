@@ -8,39 +8,19 @@ concurrency:
   cancel-in-progress: false
 permissions:
   contents: write
-
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     env:
       PYTHONUNBUFFERED: "1"
-      # Set these in repo Settings -> Secrets and variables -> Actions -> Secrets
       NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-      # Optional DeepSeek for CI (set if you want AI explanations in Actions)
-      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-      DEEPSEEK_BASE_URL: ${{ vars.DEEPSEEK_BASE_URL }}
-      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Ensure zip & jq exist
-        run: |
-          set -euo pipefail
-          if ! command -v zip >/dev/null 2>&1; then
-            sudo apt-get update -y
-            sudo apt-get install -y zip
-          fi
-          if ! command -v jq >/dev/null 2>&1; then
-            sudo apt-get update -y
-            sudo apt-get install -y jq
-          fi
-
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -48,20 +28,14 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-
       - name: Install deps
         if: hashFiles('app/requirements.txt') != ''
         run: |
-          set -euo pipefail
           python -m pip install --upgrade pip
           pip install -r app/requirements.txt
-
       - name: Build gauge
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          DEEPSEEK_BASE_URL: ${{ vars.DEEPSEEK_BASE_URL }}
-          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
         run: |
           set -euo pipefail
           if [ -f app/game_over_gauge.py ]; then
@@ -72,9 +46,6 @@ jobs:
           else
             echo "app/game_over_gauge.py not found; skipping compute."
           fi
-          test -f public/dashboard.html || { echo "dashboard.html missing"; exit 1; }
-          test -f public/gauge.json || { echo "gauge.json missing"; exit 1; }
-
       - name: Commit & push Pages content
         run: |
           set -euo pipefail
@@ -82,36 +53,22 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/dashboard.html public/gauge.json || true
           git diff --staged --quiet || (git commit -m "auto: daily gauge update" && git push)
-
       - name: Deploy to Netlify (REST)
         if: env.NETLIFY_TOKEN != '' && env.NETLIFY_SITE_ID != ''
-        env:
-          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           set -euo pipefail
-
           test -d public || { echo "public/ not found"; exit 1; }
-
-          # Create a temp dir so the zip file does NOT pre-exist.
-          TMPDIR="$(mktemp -d)"
-          ZIPFILE="${TMPDIR}/deploy.zip"
-
+          ZIPFILE="$(mktemp /tmp/netlify_deploy.XXXXXX.zip)"
           (cd public && zip -qr "$ZIPFILE" .)
-          test -s "$ZIPFILE" || { echo "zip failed or empty"; ls -l "$ZIPFILE" || true; exit 2; }
-
           DEPLOY_JSON="$(curl -fsS -X POST \
             -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
             -H "Content-Type: application/zip" \
             --data-binary @"$ZIPFILE" \
             "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/deploys")"
-
-          rm -rf "$TMPDIR" || true
-
+          rm -f "$ZIPFILE" || true
           echo "$DEPLOY_JSON" | jq -e .id >/dev/null
           DEPLOY_ID="$(echo "$DEPLOY_JSON" | jq -r .id)"
           echo "Deploy created: $DEPLOY_ID"
-
           for i in $(seq 1 40); do
             STATE="$(curl -fsS -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
               "https://api.netlify.com/api/v1/deploys/${DEPLOY_ID}" | jq -r .state)"
@@ -119,9 +76,3 @@ jobs:
             [ "$STATE" = "ready" ] && break
             sleep 3
           done
-
-      # Optional: surface which explainer path ran (helps debugging DeepSeek in CI)
-      - name: Log explanation source
-        run: |
-          set -euo pipefail
-          jq -r '.explanation_source' public/../app/gauge.json 2>/dev/null || true
