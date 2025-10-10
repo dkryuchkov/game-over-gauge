@@ -55,20 +55,33 @@ jobs:
           git diff --staged --quiet || (git commit -m "auto: daily gauge update" && git push)
       - name: Deploy to Netlify (REST)
         if: env.NETLIFY_TOKEN != '' && env.NETLIFY_SITE_ID != ''
+        env:
+          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
           set -euo pipefail
+
           test -d public || { echo "public/ not found"; exit 1; }
-          ZIPFILE="$(mktemp /tmp/netlify_deploy.XXXXXX.zip)"
+
+          # Create a temp dir so the output zip path does NOT pre-exist
+          TMPDIR="$(mktemp -d)"
+          ZIPFILE="${TMPDIR}/deploy.zip"
+
           (cd public && zip -qr "$ZIPFILE" .)
+          test -s "$ZIPFILE" || { echo "zip failed or empty"; ls -l "$ZIPFILE" || true; exit 2; }
+
           DEPLOY_JSON="$(curl -fsS -X POST \
             -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
             -H "Content-Type: application/zip" \
             --data-binary @"$ZIPFILE" \
             "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/deploys")"
-          rm -f "$ZIPFILE" || true
+
+          rm -rf "$TMPDIR" || true
+
           echo "$DEPLOY_JSON" | jq -e .id >/dev/null
           DEPLOY_ID="$(echo "$DEPLOY_JSON" | jq -r .id)"
           echo "Deploy created: $DEPLOY_ID"
+
           for i in $(seq 1 40); do
             STATE="$(curl -fsS -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
               "https://api.netlify.com/api/v1/deploys/${DEPLOY_ID}" | jq -r .state)"
