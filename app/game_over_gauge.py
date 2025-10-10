@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os, sys, json, math, logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, List
 from io import StringIO
 
 import requests
@@ -10,18 +10,12 @@ import numpy as np
 from dotenv import load_dotenv
 from jinja2 import Template
 
-# =========================
-# Logging
-# =========================
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
-# =========================
-# Constants & Defaults
-# =========================
 FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
 FRED_SERIES = {
     "DGS10": {"desc": "US 10Y Treasury Yield (Nominal, %)", "units": "pct"},
@@ -29,52 +23,51 @@ FRED_SERIES = {
     "BAMLH0A0HYM2": {"desc": "US High Yield OAS (%, BofA ICE)", "units": "pct"},
     "VIXCLS": {"desc": "VIX (Implied Volatility)", "units": "idx"},
 }
-# Term premium sources (in priority order)
-TP_SERIES_FRED = "THREEFYTP10"     # ACM 10y term premium (FRED-hosted)
-TP_SERIES_PROXY = "T10Y2Y"         # 10y-2y Treasury spread (proxy if TP fails)
+TP_SERIES_FRED = "THREEFYTP10"
+TP_SERIES_PROXY = "T10Y2Y"
 NYFED_TP_CSV = "https://www.newyorkfed.org/medialibrary/research/data_indicators/ACMTermPremium_Daily_Levels.csv"
 
-# Default weights (sum to 1.0)
 DEFAULT_WEIGHTS = {
-    "DGS10": 0.20,         # Nominal 10y
-    "DFII10": 0.25,        # Real 10y
-    "BAMLH0A0HYM2": 0.30,  # HY OAS
-    "VIXCLS": 0.15,        # VIX
-    "TERM_PREMIUM_10Y": 0.10,  # Term premium (true or proxy)
+    "DGS10": 0.20,
+    "DFII10": 0.25,
+    "BAMLH0A0HYM2": 0.30,
+    "VIXCLS": 0.15,
+    "TERM_PREMIUM_10Y": 0.10,
 }
 
-# Normalization anchors (min->0 score; max->100 score)
 NORMALIZERS = {
-    "DGS10": (2.5, 7.0),          # 2.5% benign ... 7% severe
-    "DFII10": (0.0, 3.0),         # 0% benign ... 3% severe (real yields)
-    "BAMLH0A0HYM2": (3.0, 9.0),   # 3% benign ... 9% crisis-like
-    "VIXCLS": (12.0, 45.0),       # 12 calm ... 45 stressed
-    # For true ACM 10y TP and proxy curve: similar stress mapping
-    "TERM_PREMIUM_10Y": (-1.0, 2.0),     # -1% benign … +2% stressed
+    "DGS10": (2.5, 7.0),
+    "DFII10": (0.0, 3.0),
+    "BAMLH0A0HYM2": (3.0, 9.0),
+    "VIXCLS": (12.0, 45.0),
+    "TERM_PREMIUM_10Y": (-1.0, 2.0),
     "TERM_PREMIUM_PROXY": (-1.0, 2.0),
 }
 
-# Trend penalty params
 TREND_LOOKBACK_DAYS = 5
 TREND_PENALTIES = {
-    "DGS10": (0.25, 3.0),          # +25 bps in 5d => +3pts
-    "DFII10": (0.25, 4.0),         # +25 bps in 5d => +4pts
-    "BAMLH0A0HYM2": (0.50, 5.0),   # +50 bps in 5d => +5pts
-    "VIXCLS": (5.0, 4.0),          # +5 vol pts in 5d => +4pts
+    "DGS10": (0.25, 3.0),
+    "DFII10": (0.25, 4.0),
+    "BAMLH0A0HYM2": (0.50, 5.0),
+    "VIXCLS": (5.0, 4.0),
     "TERM_PREMIUM_10Y": (0.25, 2.0),
     "TERM_PREMIUM_PROXY": (0.25, 2.0),
 }
 MAX_TREND_PENALTY = 10.0
 
-# Output
 DEFAULT_OUTPUT_HTML = os.getenv("OUTPUT_HTML", "dashboard.html")
 DEFAULT_OUTPUT_JSON = os.getenv("OUTPUT_JSON", "gauge.json")
 
-USER_AGENT = {"User-Agent": "game-over-gauge/1.4 (+local)"}
+USER_AGENT = {"User-Agent": "game-over-gauge/2.1 (+local)"}
 
-# =========================
-# Helpers
-# =========================
+BANDS = [
+    {"lo": 0,  "hi": 20, "name": "Safe",         "color": "#16a34a"},
+    {"lo": 20, "hi": 40, "name": "Cautious",     "color": "#84cc16"},
+    {"lo": 40, "hi": 60, "name": "Risky",        "color": "#f59e0b"},
+    {"lo": 60, "hi": 80, "name": "Nearly Crash", "color": "#f97316"},
+    {"lo": 80, "hi": 100,"name": "Game Over",    "color": "#dc2626"},
+]
+
 def getenv_float(name: str, default: Optional[float]) -> Optional[float]:
     v = os.getenv(name)
     if v is None or v.strip() == "":
@@ -126,84 +119,83 @@ def latest_and_change(df: pd.DataFrame, days: int = TREND_LOOKBACK_DAYS) -> Tupl
     past_val = past.iloc[-1]["value"]
     return (latest_val, latest_val - past_val)
 
-# --- NY Fed CSV (kept as a quiet secondary fallback) ---
-def _read_nyfed_tp_csv(text: str) -> pd.DataFrame:
-    # Try to identify header line with 'date'
-    lines = text.splitlines()
-    header_idx = None
-    for i, line in enumerate(lines[:120]):
-        if "date" in line.lower():
-            header_idx = i
-            break
-    if header_idx is None:
-        raise RuntimeError("NY Fed TP CSV header not found")
-    data = "\n".join(lines[header_idx:])
-    # try comma first, then semicolon
-    for sep in (",", ";"):
-        try:
-            df = pd.read_csv(StringIO(data), sep=sep, engine="python", on_bad_lines="skip", skip_blank_lines=True)
-            # pick date column
-            date_col = None
-            for c in df.columns:
-                if str(c).lower().strip() == "date":
-                    date_col = c
-                    break
-            if date_col is None:
-                continue
-            # pick TP column (ACMTP10) or most-numeric
-            tp_col = None
-            for c in df.columns:
-                if str(c).upper().replace(" ", "") in ("ACMTP10", "ACMTP_10Y", "TP10", "ACMTP10_"):
-                    tp_col = c
-                    break
-            if tp_col is None:
-                # choose the column with highest numeric density
-                candidates = [c for c in df.columns if c != date_col]
-                best, best_ratio = None, -1.0
-                for c in candidates:
-                    ratio = pd.to_numeric(df[c], errors="coerce").notna().mean()
-                    if ratio > best_ratio:
-                        best_ratio, best = ratio, c
-                tp_col = best
-            out = pd.DataFrame({
-                "date": pd.to_datetime(df[date_col], errors="coerce"),
-                "value": pd.to_numeric(df[tp_col], errors="coerce"),
-            }).dropna().sort_values("date").reset_index(drop=True)
-            if out.empty:
-                continue
-            return out
-        except Exception:
-            continue
-    raise RuntimeError("NY Fed TP CSV parse failed")
+# ----- SVG geometry helpers -----
+def degree_from_score(score: float) -> float:
+    # 0..100 across top semicircle: 0→180°, 50→90°, 100→0°.
+    return 180.0 - (score / 100.0) * 180.0
 
-def fetch_term_premium_any(fred_key: str) -> Tuple[pd.DataFrame, str]:
-    """
-    Try FRED THREEFYTP10 (preferred), then NY Fed CSV, then FRED T10Y2Y proxy.
-    Returns (df, label) where label is for the UI row.
-    """
-    # 1) FRED THREEFYTP10
-    try:
-        df = fetch_fred_series(TP_SERIES_FRED, fred_key)
-        return df, "ACM 10Y Term Premium (THREEFYTP10, %)"
-    except Exception as e:
-        logging.info(f"THREEFYTP10 unavailable: {e}")
+def needle_rotation_deg(score: float) -> float:
+    # Relative to vertical: 0%→-90°, 50%→0°, 100%→+90°
+    return (score / 100.0) * 180.0 - 90.0
 
-    # 2) NY Fed CSV (quiet)
-    try:
-        r = requests.get(NYFED_TP_CSV, timeout=25, headers=USER_AGENT, allow_redirects=True)
-        r.raise_for_status()
-        df_csv = _read_nyfed_tp_csv(r.text)
-        return df_csv, "ACM 10Y Term Premium (NY Fed CSV, %)"
-    except Exception as e:
-        logging.info(f"NY Fed TP CSV unavailable: {e}")
+def _polar(cx: float, cy: float, r: float, deg: float) -> Tuple[float, float]:
+    rad = math.radians(deg)
+    return cx + r * math.cos(rad), cy - r * math.sin(rad)  # flip Y for SVG
 
-    # 3) FRED T10Y2Y proxy
-    try:
-        df = fetch_fred_series(TP_SERIES_PROXY, fred_key)
-        return df.rename(columns={"value": "value"}), "Curve Proxy (10Y-2Y, %)"
-    except Exception as e:
-        logging.info(f"T10Y2Y proxy unavailable: {e}")
-        raise RuntimeError("All term premium sources failed")
+def donut_segment_path(cx: float, cy: float, r_outer: float, r_inner: float,
+                       start_deg: float, end_deg: float) -> str:
+    ox1, oy1 = _polar(cx, cy, r_outer, start_deg)
+    ox2, oy2 = _polar(cx, cy, r_outer, end_deg)
+    ix2, iy2 = _polar(cx, cy, r_inner, end_deg)
+    ix1, iy1 = _polar(cx, cy, r_inner, start_deg)
+
+    delta = abs(end_deg - start_deg)
+    large = 1 if delta > 180 else 0
+    sweep_outer = 1 if end_deg < start_deg else 0  # clockwise across top
+    sweep_inner = 1 - sweep_outer
+
+    return (
+        f"M {ox1:.3f},{oy1:.3f} "
+        f"A {r_outer:.3f},{r_outer:.3f} 0 {large} {sweep_outer} {ox2:.3f},{oy2:.3f} "
+        f"L {ix2:.3f},{iy2:.3f} "
+        f"A {r_inner:.3f},{r_inner:.3f} 0 {large} {sweep_inner} {ix1:.3f},{iy1:.3f} Z"
+    )
+
+def arc_path(cx: float, cy: float, r: float, start_deg: float, end_deg: float) -> str:
+    """Open arc (no close). Used for curved text labels."""
+    x1, y1 = _polar(cx, cy, r, start_deg)
+    x2, y2 = _polar(cx, cy, r, end_deg)
+    delta = abs(end_deg - start_deg)
+    large = 1 if delta > 180 else 0
+    sweep = 1 if end_deg < start_deg else 0  # clockwise across top
+    return f"M {x1:.3f},{y1:.3f} A {r:.3f},{r:.3f} 0 {large} {sweep} {x2:.3f},{y2:.3f}"
+
+def band_paths(cx: float, cy: float, r_outer: float, r_inner: float) -> List[Dict[str, str]]:
+    out = []
+    for b in BANDS:
+        sd, ed = degree_from_score(b["lo"]), degree_from_score(b["hi"])
+        d = donut_segment_path(cx, cy, r_outer, r_inner, sd, ed)
+        out.append({"d": d, "color": b["color"], "name": b["name"], "lo": b["lo"], "hi": b["hi"],
+                    "sd": sd, "ed": ed})
+    return out
+
+def band_for(score: float) -> Dict[str, str]:
+    for b in BANDS:
+        if b["lo"] <= score < b["hi"]:
+            return b
+    return BANDS[-1]
+
+def plain_english_summary(score: float, penalty: float) -> Tuple[str, str]:
+    b = band_for(score)
+    name = b["name"]
+    if name == "Safe":
+        text = ("Markets look calm. Stay the course. "
+                "Avoid big, sudden bets. Keep any single stock/sector/currency under ~25%.")
+    elif name == "Cautious":
+        text = ("Some pressure is building. Keep diversified and trim big positions. "
+                "‘Over-concentration’ means too much in one thing — e.g., >40% in one stock, one sector (like tech), "
+                "or one currency (all USD). Spread across assets, sectors and 2–3 currencies.")
+    elif name == "Risky":
+        text = ("Risk is rising. Reduce speculative names, add cash/short-duration bonds, and consider hedges. "
+                "Keep single positions well below 20%.")
+    elif name == "Nearly Crash":
+        text = ("Stress is high. Go defensive: quality balance sheets, short-duration bonds, cash liquidity. "
+                "Avoid leverage and illiquid small caps.")
+    else:
+        text = ("Severe stress. Expect disorderly moves. Focus on capital preservation, liquidity, "
+                "and counterparty safety.")
+    trend = "" if penalty <= 0.05 else f" Recent 5-day deterioration added a {penalty:.1f}-point penalty."
+    return name, text + trend
 
 def html_template() -> Template:
     return Template(r"""
@@ -215,94 +207,171 @@ def html_template() -> Template:
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
     :root { --needle-deg: {{ needle_deg }}deg; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; margin: 20px; color:#111; }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    .top { display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; }
+    .panel { flex:1 1 360px; }
 
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; color: #111; }
-    .gauge-wrap { display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+    .gbox { position:relative; width: 560px; max-width: 100%; }
+    .gtitle { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    svg { display:block; width:100%; height:auto; }
 
-    .gauge {
-      position: relative;
-      width: 260px; height: 130px;
-      overflow: hidden;
-      border-top-left-radius: 260px; border-top-right-radius: 260px;
-      background: linear-gradient(90deg, #16a34a 0%, #f59e0b 50%, #dc2626 100%);
-    }
-    /* inner white “mask” (drawn UNDER the needle now) */
-    .gauge::after {
-      content:"";
-      position:absolute; left:50%; bottom:-14px; transform:translateX(-50%);
-      width: 236px; height: 236px; background: #fff; border-radius: 50%;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.08) inset;
-      z-index: 1; /* below needle */
-    }
-    /* the pointer */
-    .needle {
-      position:absolute; left:50%; bottom:0;
-      width:2px; height:130px; background:#111;
-      transform-origin: bottom center;
-      transform: rotate(var(--needle-deg));
-      z-index: 2; /* above mask */
-    }
-    /* little cap to hide the pivot */
-    .cap {
-      position:absolute; left:50%; bottom:0; transform:translate(-50%, 6px);
-      width:14px; height:14px; background:#111; border-radius:50%;
-      z-index: 3;
-      box-shadow: 0 0 0 3px #fff; /* ring so it sits cleanly on the mask */
-    }
+    .needle { transform-origin: 280px 240px; transform: rotate(var(--needle-deg)); }
+    .hub { fill:#111; }
+    .band-stroke { stroke:#ffffff; stroke-width:2; }
 
-    .score { font-size: 28px; font-weight: 700; }
-    table { border-collapse: collapse; width: 100%; margin-top: 16px; }
-    th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
-    th { background:#f5f5f5; text-align:left; }
+    .tick text { font-size: 11px; fill:#444; }
+    .bandlbl { font-size: 12px; fill:#111; opacity:.95; }
+
+    .score { font-size: 36px; font-weight: 800; line-height:1; }
+    .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; margin-left:8px; }
+    .muted { color:#555; font-size:12px; }
+    .explain { margin-top:10px; font-size:14px; line-height:1.5; }
+
+    table { border-collapse: collapse; width: 100%; margin-top: 18px; }
+    th, td { border:1px solid #e5e7eb; padding:8px; font-size: 14px; }
+    th { background:#f7f7f7; text-align:left; }
     .meta { color:#555; font-size: 12px; margin-top:8px; }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   </style>
 </head>
 <body>
-  <h1>Game Over Gauge</h1>
+  <div class="wrap">
+    <h1>Game Over Gauge</h1>
 
-  <div class="gauge-wrap" role="group" aria-labelledby="gauge-title">
-    <div class="gauge" aria-hidden="true">
-      <div class="needle"></div>
-      <div class="cap"></div>
+    <div class="top" role="group" aria-labelledby="gauge-title">
+      <div class="gbox">
+        <div class="gtitle">Market Stress Gauge</div>
+
+        <svg viewBox="0 0 560 280" role="img" aria-labelledby="gauge-title">
+          <title id="gauge-title">Gauge at {{ total_score|round(1) }} percent</title>
+
+          <defs>
+            {% for p in band_paths %}
+              <path id="{{ p.label_path_id }}" d="{{ p.label_path_d }}" />
+            {% endfor %}
+          </defs>
+
+          {% for p in band_paths %}
+            <path d="{{ p.d }}" fill="{{ p.color }}" class="band-stroke" />
+          {% endfor %}
+
+          {% for p in band_paths %}
+            <text class="bandlbl">
+              <textPath href="#{{ p.label_path_id }}" startOffset="50%" text-anchor="middle">{{ p.name }}</textPath>
+            </text>
+          {% endfor %}
+
+          {% for mark in tick_marks %}
+            <g class="tick">
+              <line x1="{{ mark.x1 }}" y1="{{ mark.y1 }}" x2="{{ mark.x2 }}" y2="{{ mark.y2 }}" stroke="#374151" stroke-width="1"/>
+              <text x="{{ mark.tx }}" y="{{ mark.ty }}" text-anchor="middle">{{ mark.label }}</text>
+            </g>
+          {% endfor %}
+
+          <g class="needle">
+            <line x1="280" y1="240" x2="280" y2="60" stroke="#111" stroke-width="3"/>
+            <circle class="hub" cx="280" cy="240" r="7"/>
+            <circle cx="280" cy="240" r="11" fill="none" stroke="#fff" stroke-width="3"/>
+          </g>
+        </svg>
+
+        <div class="sr-only" aria-live="polite">Gauge pointer at {{ total_score|round(1) }} percent.</div>
+      </div>
+
+      <div class="panel">
+        <div class="score">
+          {{ total_score|round(1) }}%
+          <span class="badge" style="background: {{ band_color }}">{{ band_name }}</span>
+        </div>
+        <div class="muted">As of {{ timestamp }} (UTC). Trend penalty applied: {{ trend_penalty|round(1) }} pts.</div>
+        <div class="explain">{{ explanation }}</div>
+      </div>
     </div>
-    <div>
-      <div id="gauge-title" class="score">{{ total_score|round(1) }}%</div>
-      <div class="meta">As of {{ timestamp }} (UTC)</div>
-      <div class="meta">Trend penalty applied: {{ trend_penalty|round(1) }} pts</div>
-      <div class="sr-only" aria-live="polite">Gauge pointer at {{ total_score|round(1) }} percent.</div>
-    </div>
+
+    <h2>Components</h2>
+    <table>
+      <thead>
+        <tr><th>Indicator</th><th>Latest</th><th>5D Δ</th><th>Score (0–100)</th><th>Weight</th></tr>
+      </thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.name }}</td>
+          <td>{{ row.latest }}</td>
+          <td>{{ row.change }}</td>
+          <td>{{ row.score|round(1) }}</td>
+          <td>{{ (row.weight*100)|round(0) }}%</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <p class="meta">
+      * Scoring: normalized per indicator anchors (benign → stressed), weighted, then a capped trend penalty is added for sharp 5-day deteriorations.
+    </p>
   </div>
-
-  <h2>Components</h2>
-  <table>
-    <thead>
-      <tr><th>Indicator</th><th>Latest</th><th>5D Δ</th><th>Score (0–100)</th><th>Weight</th></tr>
-    </thead>
-    <tbody>
-    {% for row in rows %}
-      <tr>
-        <td>{{ row.name }}</td>
-        <td>{{ row.latest }}</td>
-        <td>{{ row.change }}</td>
-        <td>{{ row.score|round(1) }}</td>
-        <td>{{ (row.weight*100)|round(0) }}%</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-
-  <p class="meta">
-    * Scoring: normalized per indicator anchors (benign → stressed), weighted, then a capped trend penalty is added for sharp 5-day deteriorations.
-  </p>
 </body>
 </html>
     """)
 
+# ---- CSV fallback parsing (unchanged) ----
+def _read_nyfed_tp_csv(text: str) -> pd.DataFrame:
+    lines = text.splitlines()
+    header_idx = None
+    for i, line in enumerate(lines[:120]):
+        if "date" in line.lower():
+            header_idx = i
+            break
+    if header_idx is None:
+        raise RuntimeError("NY Fed TP CSV header not found")
+    data = "\n".join(lines[header_idx:])
+    for sep in (",",";"):
+        try:
+            df = pd.read_csv(StringIO(data), sep=sep, engine="python", on_bad_lines="skip", skip_blank_lines=True)
+            date_col = next((c for c in df.columns if str(c).lower().strip()=="date"), None)
+            if date_col is None:
+                continue
+            tp_col = None
+            for c in df.columns:
+                if str(c).upper().replace(" ","") in ("ACMTP10","ACMTP_10Y","TP10","ACMTP10_"):
+                    tp_col = c; break
+            if tp_col is None:
+                candidates=[c for c in df.columns if c!=date_col]
+                best=None; best_ratio=-1.0
+                for c in candidates:
+                    ratio=pd.to_numeric(df[c], errors="coerce").notna().mean()
+                    if ratio>best_ratio: best_ratio, best=ratio, c
+                tp_col = best
+            out = pd.DataFrame({
+                "date": pd.to_datetime(df[date_col], errors="coerce"),
+                "value": pd.to_numeric(df[tp_col], errors="coerce"),
+            }).dropna().sort_values("date").reset_index(drop=True)
+            if out.empty: continue
+            return out
+        except Exception:
+            continue
+    raise RuntimeError("NY Fed TP CSV parse failed")
 
-def degree_from_score(score: float) -> float:
-    # 0% => -90deg; 100% => +90deg
-    return (score / 100.0) * 180.0 - 90.0
+def fetch_term_premium_any(fred_key: str) -> Tuple[pd.DataFrame, str]:
+    try:
+        df = fetch_fred_series(TP_SERIES_FRED, fred_key)
+        return df, "ACM 10Y Term Premium (THREEFYTP10, %)"
+    except Exception as e:
+        logging.info(f"THREEFYTP10 unavailable: {e}")
+    try:
+        r = requests.get(NYFED_TP_CSV, timeout=25, headers=USER_AGENT, allow_redirects=True)
+        r.raise_for_status()
+        df_csv = _read_nyfed_tp_csv(r.text)
+        return df_csv, "ACM 10Y Term Premium (NY Fed CSV, %)"
+    except Exception as e:
+        logging.info(f"NY Fed TP CSV unavailable: {e}")
+    try:
+        df = fetch_fred_series(TP_SERIES_PROXY, fred_key)
+        return df, "Curve Proxy (10Y-2Y, %)"
+    except Exception as e:
+        logging.info(f"T10Y2Y proxy unavailable: {e}")
+        raise RuntimeError("All term premium sources failed")
 
 def main():
     load_dotenv()
@@ -311,7 +380,6 @@ def main():
         logging.error("FRED_API_KEY is not set. Create app/.env with your key.")
         sys.exit(1)
 
-    # Load optional weights
     weights = dict(DEFAULT_WEIGHTS)
     for envname, key in [
         ("WEIGHT_NOMINAL_10Y", "DGS10"),
@@ -325,20 +393,17 @@ def main():
             weights[key] = max(0.0, min(1.0, val))
 
     def renorm(w: Dict[str, float], drop_key: str) -> Dict[str, float]:
-        new = dict(w)
-        new.pop(drop_key, None)
+        new = dict(w); new.pop(drop_key, None)
         s = sum(new.values())
         if s > 0:
-            for k in new:
-                new[k] = new[k] / s
+            for k in new: new[k] = new[k] / s
         return new
 
     latest: Dict[str, float] = {}
     changes: Dict[str, Optional[float]] = {}
     scores: Dict[str, float] = {}
-    rows = []
+    rows: List[Dict[str, object]] = []
 
-    # FRED indicators
     for sid in FRED_SERIES.keys():
         try:
             df = fetch_fred_series(sid, fred_key)
@@ -347,11 +412,8 @@ def main():
             scores[sid] = normalize(lv, sid)
         except Exception as e:
             logging.warning(f"Failed to fetch {sid}: {e}")
-            latest[sid] = float("nan")
-            changes[sid] = None
-            scores[sid] = 0.0
+            latest[sid] = float("nan"); changes[sid] = None; scores[sid] = 0.0
 
-    # Term premium (auto with fallbacks)
     tp_key = "TERM_PREMIUM_10Y"
     tp_label = "ACM 10Y Term Premium (%)"
     tp_ok = False
@@ -359,7 +421,6 @@ def main():
         tp_df, tp_label = fetch_term_premium_any(fred_key)
         lv, ch = latest_and_change(tp_df, TREND_LOOKBACK_DAYS)
         latest[tp_key], changes[tp_key] = lv, ch
-        # If label is proxy, use proxy normalizer key
         norm_key = "TERM_PREMIUM_PROXY" if "Proxy" in tp_label or "10Y-2Y" in tp_label else "TERM_PREMIUM_10Y"
         scores[tp_key] = normalize(lv, norm_key)
         tp_ok = True
@@ -369,21 +430,14 @@ def main():
         scores[tp_key] = 0.0
         weights = renorm(weights, tp_key)
 
-    # Weighted score
-    total = 0.0
-    for k, w in weights.items():
-        total += w * scores.get(k, 0.0)
+    total = sum(weights.get(k,0.0) * scores.get(k,0.0) for k in weights.keys())
 
-    # Trend penalty
     penalty = 0.0
     for k in ["DGS10", "DFII10", "BAMLH0A0HYM2", "VIXCLS", tp_key]:
         delta = changes.get(k)
-        thr_pts = TREND_PENALTIES.get(k if k != tp_key or tp_ok else "TERM_PREMIUM_PROXY", (None, None))
-        thr, pts = thr_pts
-        if delta is None or thr is None:
-            continue
-        if delta >= thr:
-            penalty += pts
+        thr, pts = TREND_PENALTIES.get(k if k != tp_key or tp_ok else "TERM_PREMIUM_PROXY", (None, None))
+        if delta is None or thr is None: continue
+        if delta >= thr: penalty += pts
     penalty = min(penalty, MAX_TREND_PENALTY)
 
     total_score = max(0.0, min(100.0, total + penalty))
@@ -396,52 +450,67 @@ def main():
         "VIXCLS": "VIX (index)",
         "TERM_PREMIUM_10Y": tp_label,
     }
-    units_fmt = {
-        "DGS10": "{:.2f}%",
-        "DFII10": "{:.2f}%",
-        "BAMLH0A0HYM2": "{:.2f}%",
-        "VIXCLS": "{:.1f}",
-        "TERM_PREMIUM_10Y": "{:.2f}%",
-    }
-
-    keys = ["DGS10", "DFII10", "BAMLH0A0HYM2", "VIXCLS", "TERM_PREMIUM_10Y"]
+    units_fmt = { "DGS10":"{:.2f}%", "DFII10":"{:.2f}%", "BAMLH0A0HYM2":"{:.2f}%", "VIXCLS":"{:.1f}", "TERM_PREMIUM_10Y":"{:.2f}%" }
+    keys = ["DGS10","DFII10","BAMLH0A0HYM2","VIXCLS","TERM_PREMIUM_10Y"]
     for k in keys:
-        w = weights.get(k, 0.0)
-        lv = latest.get(k, float("nan"))
-        ch = changes.get(k, None)
+        w = weights.get(k,0.0); lv = latest.get(k,float("nan")); ch = changes.get(k,None)
         rows.append({
-            "name": nice_name.get(k, k),
+            "name": nice_name.get(k,k),
             "latest": ("n/a" if (lv is None or (isinstance(lv,float) and math.isnan(lv))) else units_fmt[k].format(lv)),
             "change": ("n/a" if (ch is None or (isinstance(ch,float) and math.isnan(ch))) else units_fmt[k].format(ch if k!="VIXCLS" else ch)),
-            "score": scores.get(k, 0.0),
-            "weight": w
+            "score": scores.get(k,0.0), "weight": w
         })
+
+    # Geometry / paths
+    cx, cy = 280.0, 240.0
+    r_outer, r_inner = 230.0, 180.0
+    r_center = (r_outer + r_inner) / 2.0
+
+    paths = band_paths(cx, cy, r_outer, r_inner)
+
+    # Curved label paths (defs)
+    for i, p in enumerate(paths):
+        p["label_path_id"] = f"bandlbl_{i}"
+        p["label_path_d"] = arc_path(cx, cy, r_center, p["sd"], p["ed"])
+
+    # Ticks 0 / 50 / 100
+    def tick_at(pct: float):
+        deg=degree_from_score(pct)
+        x1,y1=_polar(cx,cy,r_inner-4,deg)
+        x2,y2=_polar(cx,cy,r_inner-22,deg)
+        tx,ty=_polar(cx,cy,r_inner-34,deg)
+        return {"x1":round(x1,1),"y1":round(y1,1),"x2":round(x2,1),"y2":round(y2,1),
+                "tx":round(tx,1),"ty":round(ty,1),"label":f"{int(pct)}"}
+    tick_marks=[tick_at(0), tick_at(50), tick_at(100)]
+
+    band = band_for(total_score)
+    band_name = band["name"]; band_color = band["color"]
+    _, explanation = plain_english_summary(total_score, penalty)
 
     out_obj = {
         "timestamp_utc": ts,
         "total_score_percent": round(total_score, 1),
         "trend_penalty": round(penalty, 2),
+        "band": band_name,
         "components": rows
     }
     print(json.dumps(out_obj, indent=2))
 
-    out_json = os.getenv("OUTPUT_JSON", DEFAULT_OUTPUT_JSON)
-    with open(out_json, "w", encoding="utf-8") as f:
+    with open(DEFAULT_OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(out_obj, f, indent=2)
 
-    tmpl = html_template()
-    html = tmpl.render(
+    html = html_template().render(
         total_score=total_score,
         trend_penalty=penalty,
-        timestamp=ts,
-        rows=rows,
-        needle_deg=degree_from_score(total_score)
+        timestamp=ts, rows=rows,
+        needle_deg=needle_rotation_deg(total_score),
+        band_paths=paths, tick_marks=tick_marks,
+        band_name=band_name, band_color=band_color, explanation=explanation,
     )
-    out_html = os.getenv("OUTPUT_HTML", DEFAULT_OUTPUT_HTML)
-    with open(out_html, "w", encoding="utf-8") as f:
+    with open(DEFAULT_OUTPUT_HTML, "w", encoding="utf-8") as f:
         f.write(html)
 
-    logging.info(f"Gauge: {total_score:.1f}% | JSON: {out_json} | HTML: {out_html}")
+    logging.info(f"Gauge: {total_score:.1f}% ({band_name}) | JSON: {DEFAULT_OUTPUT_JSON} | HTML: {DEFAULT_OUTPUT_HTML}")
 
 if __name__ == "__main__":
     try:
