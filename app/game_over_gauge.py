@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, json, math, logging
+import os, sys, json, math, logging, time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Tuple, List
 from io import StringIO
@@ -10,12 +10,18 @@ import numpy as np
 from dotenv import load_dotenv
 from jinja2 import Template
 
+# =========================
+# Logging
+# =========================
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
+# =========================
+# Constants & Defaults
+# =========================
 FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
 FRED_SERIES = {
     "DGS10": {"desc": "US 10Y Treasury Yield (Nominal, %)", "units": "pct"},
@@ -58,8 +64,11 @@ MAX_TREND_PENALTY = 10.0
 DEFAULT_OUTPUT_HTML = os.getenv("OUTPUT_HTML", "dashboard.html")
 DEFAULT_OUTPUT_JSON = os.getenv("OUTPUT_JSON", "gauge.json")
 
-USER_AGENT = {"User-Agent": "game-over-gauge/2.1 (+local)"}
+USER_AGENT = {"User-Agent": "game-over-gauge/2.2 (+local)"}
 
+# =========================
+# Gauge bands
+# =========================
 BANDS = [
     {"lo": 0,  "hi": 20, "name": "Safe",         "color": "#16a34a"},
     {"lo": 20, "hi": 40, "name": "Cautious",     "color": "#84cc16"},
@@ -68,6 +77,9 @@ BANDS = [
     {"lo": 80, "hi": 100,"name": "Game Over",    "color": "#dc2626"},
 ]
 
+# =========================
+# Helpers
+# =========================
 def getenv_float(name: str, default: Optional[float]) -> Optional[float]:
     v = os.getenv(name)
     if v is None or v.strip() == "":
@@ -119,18 +131,27 @@ def latest_and_change(df: pd.DataFrame, days: int = TREND_LOOKBACK_DAYS) -> Tupl
     past_val = past.iloc[-1]["value"]
     return (latest_val, latest_val - past_val)
 
-# ----- SVG geometry helpers -----
+# =========================
+# SVG geometry
+# =========================
 def degree_from_score(score: float) -> float:
-    # 0..100 across top semicircle: 0→180°, 50→90°, 100→0°.
+    """
+    0..100 across the TOP semicircle, left→right:
+      0% -> 180°, 50% -> 90°, 100% -> 0°.
+    (Used for bands/ticks/labels.)
+    """
     return 180.0 - (score / 100.0) * 180.0
 
 def needle_rotation_deg(score: float) -> float:
-    # Relative to vertical: 0%→-90°, 50%→0°, 100%→+90°
+    """
+    Needle rotates relative to vertical (up):
+      0% -> -90°, 50% -> 0°, 100% -> +90°.
+    """
     return (score / 100.0) * 180.0 - 90.0
 
 def _polar(cx: float, cy: float, r: float, deg: float) -> Tuple[float, float]:
     rad = math.radians(deg)
-    return cx + r * math.cos(rad), cy - r * math.sin(rad)  # flip Y for SVG
+    return cx + r * math.cos(rad), cy - r * math.sin(rad)  # SVG Y axis downwards
 
 def donut_segment_path(cx: float, cy: float, r_outer: float, r_inner: float,
                        start_deg: float, end_deg: float) -> str:
@@ -152,12 +173,11 @@ def donut_segment_path(cx: float, cy: float, r_outer: float, r_inner: float,
     )
 
 def arc_path(cx: float, cy: float, r: float, start_deg: float, end_deg: float) -> str:
-    """Open arc (no close). Used for curved text labels."""
     x1, y1 = _polar(cx, cy, r, start_deg)
     x2, y2 = _polar(cx, cy, r, end_deg)
     delta = abs(end_deg - start_deg)
     large = 1 if delta > 180 else 0
-    sweep = 1 if end_deg < start_deg else 0  # clockwise across top
+    sweep = 1 if end_deg < start_deg else 0
     return f"M {x1:.3f},{y1:.3f} A {r:.3f},{r:.3f} 0 {large} {sweep} {x2:.3f},{y2:.3f}"
 
 def band_paths(cx: float, cy: float, r_outer: float, r_inner: float) -> List[Dict[str, str]]:
@@ -175,6 +195,9 @@ def band_for(score: float) -> Dict[str, str]:
             return b
     return BANDS[-1]
 
+# =========================
+# Explanations (deterministic + DeepSeek)
+# =========================
 def plain_english_summary(score: float, penalty: float) -> Tuple[str, str]:
     b = band_for(score)
     name = b["name"]
@@ -197,6 +220,89 @@ def plain_english_summary(score: float, penalty: float) -> Tuple[str, str]:
     trend = "" if penalty <= 0.05 else f" Recent 5-day deterioration added a {penalty:.1f}-point penalty."
     return name, text + trend
 
+DEEPSEEK_CHAT_URL = "https://api.deepseek.com/chat/completions"
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+
+def deepseek_generate_comment(
+    api_key: str,
+    score: float,
+    band_name: str,
+    penalty: float,
+    components: List[Dict[str, object]],
+    timeout_s: int = 20,
+    retries: int = 2
+) -> Optional[str]:
+    """
+    Ask DeepSeek (OpenAI-compatible API) for a concise, vivid explanation.
+    Returns text or None on failure.
+    """
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT["User-Agent"],
+    }
+
+    # Prepare compact component summary for the prompt
+    comp_lines = []
+    for c in components:
+        try:
+            comp_lines.append(f"- {c['name']}: score {c['score']:.1f}, latest {c['latest']}, 5D Δ {c['change']}")
+        except Exception:
+            pass
+    comp_blob = "\n".join(comp_lines) if comp_lines else "(no details)"
+
+    system = (
+        "You are a market explainer. Speak to a broad audience in crisp, vivid language. "
+        "Be accurate, non-alarmist. Keep it to 2–3 short sentences. "
+        "Explain what the score means, what’s driving it, and a sensible action bias "
+        "(diversify, trim risk, raise liquidity), without giving personalized financial advice."
+    )
+    user = (
+        f"Gauge score: {score:.1f}% ({band_name}). Trend penalty in last 5 days: {penalty:.1f} pts.\n"
+        f"Components:\n{comp_blob}\n\n"
+        "Write a brief plain-English status: 2–3 sentences, max ~70 words total. "
+        "Avoid jargon. Don’t mention this is AI generated."
+    )
+
+    payload = {
+        "model": DEEPSEEK_MODEL,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        "temperature": 0.35,
+        "max_tokens": 180,
+        "top_p": 0.9,
+    }
+
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.post(
+                DEEPSEEK_CHAT_URL,
+                headers=headers,
+                json=payload,
+                timeout=timeout_s,
+            )
+            if resp.status_code >= 500:
+                raise RuntimeError(f"DeepSeek 5xx: {resp.status_code}")
+            resp.raise_for_status()
+            data = resp.json()
+            # OpenAI-compatible shape
+            content = data.get("choices", [{}])[0].get("message", {}).get("content")
+            if content and isinstance(content, str):
+                # Normalize whitespace
+                return " ".join(content.split())
+            return None
+        except Exception as e:
+            logging.warning(f"DeepSeek call failed (attempt {attempt+1}/{retries+1}): {e}")
+            if attempt < retries:
+                time.sleep(1.5 * (attempt + 1))
+            else:
+                return None
+
+# =========================
+# HTML template
+# =========================
 def html_template() -> Template:
     return Template(r"""
 <!doctype html>
@@ -226,7 +332,7 @@ def html_template() -> Template:
     .score { font-size: 36px; font-weight: 800; line-height:1; }
     .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; margin-left:8px; }
     .muted { color:#555; font-size:12px; }
-    .explain { margin-top:10px; font-size:14px; line-height:1.5; }
+    .explain { margin-top:10px; font-size:14px; line-height:1.5; white-space:pre-wrap; }
 
     table { border-collapse: collapse; width: 100%; margin-top: 18px; }
     th, td { border:1px solid #e5e7eb; padding:8px; font-size: 14px; }
@@ -315,14 +421,15 @@ def html_template() -> Template:
 </html>
     """)
 
-# ---- CSV fallback parsing (unchanged) ----
+# =========================
+# Term premium helpers
+# =========================
 def _read_nyfed_tp_csv(text: str) -> pd.DataFrame:
     lines = text.splitlines()
     header_idx = None
     for i, line in enumerate(lines[:120]):
         if "date" in line.lower():
-            header_idx = i
-            break
+            header_idx = i; break
     if header_idx is None:
         raise RuntimeError("NY Fed TP CSV header not found")
     data = "\n".join(lines[header_idx:])
@@ -330,8 +437,7 @@ def _read_nyfed_tp_csv(text: str) -> pd.DataFrame:
         try:
             df = pd.read_csv(StringIO(data), sep=sep, engine="python", on_bad_lines="skip", skip_blank_lines=True)
             date_col = next((c for c in df.columns if str(c).lower().strip()=="date"), None)
-            if date_col is None:
-                continue
+            if date_col is None: continue
             tp_col = None
             for c in df.columns:
                 if str(c).upper().replace(" ","") in ("ACMTP10","ACMTP_10Y","TP10","ACMTP10_"):
@@ -373,6 +479,9 @@ def fetch_term_premium_any(fred_key: str) -> Tuple[pd.DataFrame, str]:
         logging.info(f"T10Y2Y proxy unavailable: {e}")
         raise RuntimeError("All term premium sources failed")
 
+# =========================
+# Main
+# =========================
 def main():
     load_dotenv()
     fred_key = os.getenv("FRED_API_KEY", "").strip()
@@ -380,6 +489,7 @@ def main():
         logging.error("FRED_API_KEY is not set. Create app/.env with your key.")
         sys.exit(1)
 
+    # Optional weight overrides
     weights = dict(DEFAULT_WEIGHTS)
     for envname, key in [
         ("WEIGHT_NOMINAL_10Y", "DGS10"),
@@ -404,6 +514,7 @@ def main():
     scores: Dict[str, float] = {}
     rows: List[Dict[str, object]] = []
 
+    # FRED indicators
     for sid in FRED_SERIES.keys():
         try:
             df = fetch_fred_series(sid, fred_key)
@@ -414,6 +525,7 @@ def main():
             logging.warning(f"Failed to fetch {sid}: {e}")
             latest[sid] = float("nan"); changes[sid] = None; scores[sid] = 0.0
 
+    # Term premium (with fallbacks)
     tp_key = "TERM_PREMIUM_10Y"
     tp_label = "ACM 10Y Term Premium (%)"
     tp_ok = False
@@ -430,19 +542,23 @@ def main():
         scores[tp_key] = 0.0
         weights = renorm(weights, tp_key)
 
-    total = sum(weights.get(k,0.0) * scores.get(k,0.0) for k in weights.keys())
+    # Weighted score + penalty
+    total = sum(weights.get(k, 0.0) * scores.get(k, 0.0) for k in weights.keys())
 
     penalty = 0.0
     for k in ["DGS10", "DFII10", "BAMLH0A0HYM2", "VIXCLS", tp_key]:
         delta = changes.get(k)
         thr, pts = TREND_PENALTIES.get(k if k != tp_key or tp_ok else "TERM_PREMIUM_PROXY", (None, None))
-        if delta is None or thr is None: continue
-        if delta >= thr: penalty += pts
+        if delta is None or thr is None:
+            continue
+        if delta >= thr:
+            penalty += pts
     penalty = min(penalty, MAX_TREND_PENALTY)
 
     total_score = max(0.0, min(100.0, total + penalty))
     ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
+    # Table rows
     nice_name = {
         "DGS10": "US 10Y Nominal (DGS10, %)",
         "DFII10": "US 10Y Real (DFII10, %)",
@@ -461,14 +577,13 @@ def main():
             "score": scores.get(k,0.0), "weight": w
         })
 
-    # Geometry / paths
+    # Geometry for top semicircle
     cx, cy = 280.0, 240.0
     r_outer, r_inner = 230.0, 180.0
     r_center = (r_outer + r_inner) / 2.0
-
     paths = band_paths(cx, cy, r_outer, r_inner)
 
-    # Curved label paths (defs)
+    # Curved label paths
     for i, p in enumerate(paths):
         p["label_path_id"] = f"bandlbl_{i}"
         p["label_path_d"] = arc_path(cx, cy, r_center, p["sd"], p["ed"])
@@ -483,16 +598,31 @@ def main():
                 "tx":round(tx,1),"ty":round(ty,1),"label":f"{int(pct)}"}
     tick_marks=[tick_at(0), tick_at(50), tick_at(100)]
 
+    # Band/explainer
     band = band_for(total_score)
     band_name = band["name"]; band_color = band["color"]
-    _, explanation = plain_english_summary(total_score, penalty)
+
+    # DeepSeek AI blurb (with fallback)
+    ai_text = None
+    ds_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+    if ds_key:
+        try:
+            ai_text = deepseek_generate_comment(
+                ds_key, total_score, band_name, penalty, rows, timeout_s=20, retries=2
+            )
+        except Exception as e:
+            logging.warning(f"DeepSeek integration error: {e}")
+    if not ai_text:
+        _, ai_text = plain_english_summary(total_score, penalty)
 
     out_obj = {
         "timestamp_utc": ts,
         "total_score_percent": round(total_score, 1),
         "trend_penalty": round(penalty, 2),
         "band": band_name,
-        "components": rows
+        "components": rows,
+        "explanation": ai_text,
+        "explanation_source": "deepseek" if ai_text and ds_key else "local",
     }
     print(json.dumps(out_obj, indent=2))
 
@@ -505,12 +635,12 @@ def main():
         timestamp=ts, rows=rows,
         needle_deg=needle_rotation_deg(total_score),
         band_paths=paths, tick_marks=tick_marks,
-        band_name=band_name, band_color=band_color, explanation=explanation,
+        band_name=band_name, band_color=band_color, explanation=ai_text,
     )
     with open(DEFAULT_OUTPUT_HTML, "w", encoding="utf-8") as f:
         f.write(html)
 
-    logging.info(f"Gauge: {total_score:.1f}% ({band_name}) | JSON: {DEFAULT_OUTPUT_JSON} | HTML: {DEFAULT_OUTPUT_HTML}")
+    logging.info(f"Gauge: {total_score:.1f}% ({band_name}) | JSON: {DEFAULT_OUTPUT_JSON} | HTML: {DEFAULT_OUTPUT_HTML} | explainer={'deepseek' if ai_text and ds_key else 'local'}")
 
 if __name__ == "__main__":
     try:
