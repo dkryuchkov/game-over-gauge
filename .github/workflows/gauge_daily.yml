@@ -58,7 +58,8 @@ jobs:
         run: |
           set -euo pipefail
           test -d public || { echo "public/ not found"; exit 1; }
-          ZIPFILE="$(mktemp /tmp/netlify_deploy.XXXXXX.zip)"
+          TMPDIR="$(mktemp -d)"
+          ZIPFILE="${TMPDIR}/deploy.zip"
           (cd public && zip -qr "$ZIPFILE" .)
           DEPLOY_JSON="$(curl -fsS -X POST \
             -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
