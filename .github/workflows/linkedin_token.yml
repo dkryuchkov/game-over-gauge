@@ -1,0 +1,32 @@
+name: LinkedIn Access Token (Runtime Exchange)
+on:
+  workflow_call:
+    outputs:
+      access_token:
+        description: 'Ephemeral LinkedIn access token'
+        value: $${{ jobs.mint.outputs.access_token }}
+  workflow_dispatch: {}
+
+jobs:
+  mint:
+    runs-on: ubuntu-latest
+    outputs:
+      access_token: $${{ steps.exchange.outputs.access_token }}
+    steps:
+      - name: Exchange refresh token for access token
+        id: exchange
+        env:
+          LI_CLIENT_ID: $${{ secrets.LI_CLIENT_ID }}
+          LI_CLIENT_SECRET: $${{ secrets.LI_CLIENT_SECRET }}
+          LI_REFRESH_TOKEN: $${{ secrets.LI_REFRESH_TOKEN }}
+        run: |
+          set -euo pipefail
+          for v in LI_CLIENT_ID LI_CLIENT_SECRET LI_REFRESH_TOKEN; do
+            [ -n "${!v:-}" ] || ${{ echo "::error::$v is missing as a repo secret"; exit 1; }}
+          done
+          RESP="$(curl -fsS -X POST https://www.linkedin.com/oauth/v2/accessToken             -d grant_type=refresh_token             -d refresh_token="${LI_REFRESH_TOKEN}"             -d client_id="${LI_CLIENT_ID}"             -d client_secret="${LI_CLIENT_SECRET}")"
+          echo "$RESP" | jq -e .access_token >/dev/null
+          TOKEN="$(echo "$RESP" | jq -r .access_token)"
+          echo "access_token=$TOKEN" >> "$GITHUB_OUTPUT"
+      - name: Mask token
+        run: echo "::add-mask::$${{ steps.exchange.outputs.access_token }}"
