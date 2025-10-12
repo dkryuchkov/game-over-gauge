@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2025-10-11 21:09:25",
+  "timestamp_utc": "2025-10-12 09:21:20",
   "total_score_percent": 29.3,
   "trend_penalty": 0.0,
   "band": "Cautious",
@@ -40,6 +40,6 @@
       "weight": 0.1
     }
   ],
-  "explanation": "The market is in a cautious state, with mixed signals across key indicators. While real yields and the term premium are relatively stable, high yield spreads are very tight and volatility is low, suggesting complacency. This environment calls for a disciplined approach\u2014consider trimming risk in overstretched areas and ensuring your portfolio is well-diversified.",
+  "explanation": "The market's cautious score reflects mixed signals. Bond yields are stable, but high-yield credit risk is elevated and volatility remains low. This suggests a calm but fragile environment. Diversify your portfolio to balance risk and consider trimming exposure to speculative assets.",
   "explanation_source": "deepseek-sdk"
 }
