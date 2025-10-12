@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ -f app/game_over_gauge.py ]; then
-            python app/game_over_gauge.py
+            python app/game_over_gauge.py || echo "Gauge run failed (non-fatal first run)."
             mkdir -p public
             [ -f app/dashboard.html ] && cp -f app/dashboard.html public/dashboard.html
             [ -f app/gauge.json ] && cp -f app/gauge.json public/gauge.json
