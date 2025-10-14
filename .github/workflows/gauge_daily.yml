@@ -74,17 +74,15 @@ jobs:
             exit 1
           fi
 
-          # Create zip safely OUTSIDE of public/
-          ZIPFILE="/tmp/netlify_deploy_$(date +%s).zip"
-          echo "Creating zip: $ZIPFILE"
+          # Build the zip in the current workspace instead of /tmp
+          ZIPFILE="netlify_deploy.zip"
+          rm -f "$ZIPFILE" || true
+          echo "Creating $ZIPFILE from public/ ..."
           zip -qr "$ZIPFILE" public/
           echo "✅ Zip created ($(du -h "$ZIPFILE" | cut -f1))"
 
-          # Verify zip integrity
-          if ! unzip -t "$ZIPFILE" >/dev/null 2>&1; then
-            echo "❌ ERROR: Zip archive is invalid."
-            exit 1
-          fi
+          # Sanity-check the zip structure
+          unzip -t "$ZIPFILE" >/dev/null
 
           echo "🚀 Uploading to Netlify..."
           DEPLOY_JSON="$(curl -fsS -X POST \
@@ -93,7 +91,8 @@ jobs:
             --data-binary @"$ZIPFILE" \
             "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/deploys")"
 
-          rm -f "$ZIPFILE" || true
+          echo "🧹 Cleaning up"
+          rm -f "$ZIPFILE"
 
           echo "$DEPLOY_JSON" | jq -e .id >/dev/null
           DEPLOY_ID="$(echo "$DEPLOY_JSON" | jq -r .id)"
