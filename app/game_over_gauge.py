@@ -354,7 +354,6 @@ def html_template() -> Template:
 </head>
 <body>
   <div class="wrap">
-    <h1>Game Over Gauge</h1>
 
     <div class="top" role="group" aria-labelledby="gauge-title">
       <div class="gbox">
