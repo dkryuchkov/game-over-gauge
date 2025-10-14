@@ -1,13 +1,14 @@
 name: Daily Gauge + Netlify
 on:
   schedule:
-    - cron: "30 9 * * *"
+    - cron: "30 9 * * *"  # 9:30 UTC every day
   workflow_dispatch: {}
 concurrency:
   group: gauge-daily
   cancel-in-progress: false
 permissions:
-  contents: write
+  contents: read
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -16,11 +17,14 @@ jobs:
       NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -28,47 +32,66 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('app/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Install deps
+
+      - name: Install dependencies
         if: hashFiles('app/requirements.txt') != ''
         run: |
+          set -euo pipefail
           python -m pip install --upgrade pip
           pip install -r app/requirements.txt
-      - name: Build gauge
+
+      - name: Build gauge output
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           set -euo pipefail
+          echo "🔧 Building gauge..."
           if [ -f app/game_over_gauge.py ]; then
-            python app/game_over_gauge.py || echo "Gauge run failed (non-fatal first run)."
-            mkdir -p public
-            [ -f app/dashboard.html ] && cp -f app/dashboard.html public/dashboard.html
-            [ -f app/gauge.json ] && cp -f app/gauge.json public/gauge.json
+            python app/game_over_gauge.py || echo "⚠️ Gauge run failed (non-fatal first run)."
           else
-            echo "app/game_over_gauge.py not found; skipping compute."
+            echo "❌ app/game_over_gauge.py not found; aborting."
+            exit 1
           fi
-      - name: Commit & push Pages content
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/dashboard.html public/gauge.json || true
-          git diff --staged --quiet || (git commit -m "auto: daily gauge update" && git push)
-      - name: Deploy to Netlify (REST)
+
+          mkdir -p public
+          [ -f app/dashboard.html ] && cp -f app/dashboard.html public/dashboard.html
+          [ -f app/gauge.json ] && cp -f app/gauge.json public/gauge.json
+
+          if [ ! -d public ] || [ -z "$(ls -A public)" ]; then
+            echo "❌ ERROR: public/ folder missing or empty after build."
+            exit 1
+          fi
+          echo "✅ Gauge build complete."
+
+      - name: Deploy to Netlify (REST API)
         if: env.NETLIFY_TOKEN != '' && env.NETLIFY_SITE_ID != ''
         run: |
           set -euo pipefail
-          test -d public || { echo "public/ not found"; exit 1; }
+
+          echo "📦 Preparing deploy package..."
+          if [ ! -d public ] || [ -z "$(ls -A public)" ]; then
+            echo "❌ ERROR: public/ folder missing or empty, cannot deploy."
+            exit 1
+          fi
+
           ZIPFILE="$(mktemp /tmp/netlify_deploy.XXXXXX.zip)"
           (cd public && zip -qr "$ZIPFILE" .)
+          echo "✅ Zip created: $(du -h "$ZIPFILE")"
+
+          echo "🚀 Uploading to Netlify..."
           DEPLOY_JSON="$(curl -fsS -X POST \
             -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
             -H "Content-Type: application/zip" \
             --data-binary @"$ZIPFILE" \
             "https://api.netlify.com/api/v1/sites/${NETLIFY_SITE_ID}/deploys")"
+
           rm -f "$ZIPFILE" || true
+
           echo "$DEPLOY_JSON" | jq -e .id >/dev/null
           DEPLOY_ID="$(echo "$DEPLOY_JSON" | jq -r .id)"
-          echo "Deploy created: $DEPLOY_ID"
+          echo "✅ Deploy created: $DEPLOY_ID"
+
+          echo "⏳ Waiting for deploy to become ready..."
           for i in $(seq 1 40); do
             STATE="$(curl -fsS -H "Authorization: Bearer ${NETLIFY_TOKEN}" \
               "https://api.netlify.com/api/v1/deploys/${DEPLOY_ID}" | jq -r .state)"
@@ -76,3 +99,4 @@ jobs:
             [ "$STATE" = "ready" ] && break
             sleep 3
           done
+          echo "🎉 Deployment complete."
