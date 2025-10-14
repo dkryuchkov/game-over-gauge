@@ -74,9 +74,17 @@ jobs:
             exit 1
           fi
 
-          ZIPFILE="$(mktemp /tmp/netlify_deploy.XXXXXX.zip)"
-          (cd public && zip -qr "$ZIPFILE" .)
-          echo "✅ Zip created: $(du -h "$ZIPFILE")"
+          # Create zip safely OUTSIDE of public/
+          ZIPFILE="/tmp/netlify_deploy_$(date +%s).zip"
+          echo "Creating zip: $ZIPFILE"
+          zip -qr "$ZIPFILE" public/
+          echo "✅ Zip created ($(du -h "$ZIPFILE" | cut -f1))"
+
+          # Verify zip integrity
+          if ! unzip -t "$ZIPFILE" >/dev/null 2>&1; then
+            echo "❌ ERROR: Zip archive is invalid."
+            exit 1
+          fi
 
           echo "🚀 Uploading to Netlify..."
           DEPLOY_JSON="$(curl -fsS -X POST \
@@ -100,3 +108,4 @@ jobs:
             sleep 3
           done
           echo "🎉 Deployment complete."
+
