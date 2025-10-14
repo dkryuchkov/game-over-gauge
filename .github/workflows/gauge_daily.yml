@@ -47,7 +47,9 @@ jobs:
           set -euo pipefail
           echo "🔧 Building gauge..."
           if [ -f app/game_over_gauge.py ]; then
-            python app/game_over_gauge.py || echo "⚠️ Gauge run failed (non-fatal first run)."
+            cd app
+            python ./game_over_gauge.py || echo "⚠️ Gauge run failed (non-fatal first run)."
+            cd ..
           else
             echo "❌ app/game_over_gauge.py not found; aborting."
             exit 1
