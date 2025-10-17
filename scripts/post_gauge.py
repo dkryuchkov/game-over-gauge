@@ -7,6 +7,36 @@ SITE_URL = os.getenv("SITE_URL", "https://game-over-gauge.netlify.app").rstrip("
 
 def log(msg): print(f"[{datetime.now(timezone.utc).isoformat()}] {msg}")
 
+# Helper logging wrappers used across the script
+def ok(msg):
+    """Success/info logger."""
+    log(f"✅ {msg}")
+
+def warn(msg):
+    """Non-fatal warning logger."""
+    log(f"⚠️  {msg}")
+
+def err(msg):
+    """Error logger (non-raising)."""
+    log(f"❌ {msg}")
+
+def getenv_nonempty(name):
+    """Return env var stripped or None if empty / unset."""
+    v = os.getenv(name, "")
+    v = v.strip() if v is not None else ""
+    return v if v else None
+
+def _brief_response_text(resp, length=200):
+    """Return a short preview of a requests.Response body for diagnostics."""
+    try:
+        text = getattr(resp, "text", "")
+        text = (text or "").strip()
+        if not text:
+            return f"<no response body> (HTTP {getattr(resp, 'status_code', '??')})"
+        return (text[:length] + "…") if len(text) > length else text
+    except Exception as e:
+        return f"<error reading response: {e}>"
+
 def get_gauge():
     url = f"{SITE_URL}/gauge.json"
     r = requests.get(url, timeout=20)
@@ -71,9 +101,9 @@ def post_mastodon(caption, page_url):
             timeout=20
         )
         r.raise_for_status()
-        log("✅ Mastodon posted.")
+        ok("Mastodon posted.")
     except Exception as e:
-        log(f"❌ Mastodon: {e}")
+        err(f"Mastodon: {e}")
 
 def post_bluesky(gauge, caption, page_url):
     handle = getenv_nonempty("BSKY_HANDLE")
@@ -128,7 +158,9 @@ def post_bluesky(gauge, caption, page_url):
 def post_x(caption, page_url):
     api_key = os.getenv("X_API_KEY","").strip()
     token   = os.getenv("X_API_TOKEN","").strip()
-    if not api_key or not token: return
+    if not api_key or not token: 
+        warn("Skip X: X_API_KEY or X_API_TOKEN missing.")
+        return
     headers = {
         "Authorization": f"Bearer {token}",
         "X-API-Key": api_key,
@@ -142,15 +174,17 @@ def post_x(caption, page_url):
             json={"text": msg},
             timeout=20
         )
-        # Some tenants return 201; some 403 if posting is restricted. Raise on hard errors.
-        if r.status_code not in (200, 201, 202, 403):
-            r.raise_for_status()
-        if r.status_code == 403:
-            log("⚠️  X responded 403 (posting not permitted with this token).")
+        if r.status_code in (200, 201, 202):
+            ok("X/Twitter posted.")
+        elif r.status_code == 403:
+            err(f"X/Twitter 403: Token lacks posting permissions or account is restricted.")
+        elif r.status_code == 401:
+            err(f"X/Twitter 401: Token is invalid or expired.")
         else:
-            log("✅ X/Twitter posted.")
+            err(f"X/Twitter HTTP {r.status_code}: {_brief_response_text(r)}")
+            r.raise_for_status()
     except Exception as e:
-        log(f"❌ X/Twitter: {e}")
+        err(f"X/Twitter error: {e}")
 
 def post_linkedin(caption, page_url):
     token = os.getenv("LI_ACCESS_TOKEN","").strip()
@@ -176,9 +210,9 @@ def post_linkedin(caption, page_url):
         )
         # LinkedIn may return 401/403 if token lacks scope or expired.
         r.raise_for_status()
-        log("✅ LinkedIn posted.")
+        ok("LinkedIn posted.")
     except Exception as e:
-        log(f"❌ LinkedIn: {e}")
+        err(f"LinkedIn: {e}")
 
 def post_reddit(gauge, caption, page_url):
     cid  = getenv_nonempty("REDDIT_CLIENT_ID")
@@ -201,12 +235,15 @@ def post_reddit(gauge, caption, page_url):
             timeout=20
         )
         if tok_r.status_code >= 400:
-            err(f"Reddit token HTTP {tok_r.status_code}: {_brief_response_text(tok_r)}")
-            return  # don’t crash; just skip reddit
+            err(f"Reddit token fetch HTTP {tok_r.status_code}: {_brief_response_text(tok_r)}")
+            return  # don't crash; just skip reddit
+        
         tok_json = tok_r.json()
+        log(f"Reddit token response: {tok_json}")  # DEBUG: log full response
+        
         access_token = tok_json.get("access_token")
         if not access_token:
-            err(f"Reddit token missing access_token: {tok_json}")
+            err(f"Reddit token response missing 'access_token'. Full response: {json.dumps(tok_json, indent=2)}")
             return
 
         title = f"Game Over Gauge – {gauge['total_score_percent']}% ({gauge['band']})"
@@ -235,9 +272,9 @@ if __name__ == "__main__":
     log(f"Caption: {caption}")
 
     post_mastodon(caption, page_url)
-    post_bluesky(caption, page_url)
+    post_bluesky(gauge, caption, page_url)
     post_x(caption, page_url)
     post_linkedin(caption, page_url)
-    post_reddit(caption, page_url)
+    post_reddit(gauge, caption, page_url)
 
     log("Done.")
