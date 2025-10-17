@@ -357,8 +357,6 @@ def html_template() -> Template:
 
     <div class="top" role="group" aria-labelledby="gauge-title">
       <div class="gbox">
-        <div class="gtitle">Market Stress Gauge</div>
-
         <svg viewBox="0 0 560 280" role="img" aria-labelledby="gauge-title">
           <title id="gauge-title">Gauge at {{ total_score|round(1) }} percent</title>
 

@@ -4,33 +4,232 @@
   <meta charset="utf-8"/>
   <title>Game Over Gauge</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta property="og:title" content="Game Over Gauge – Real-Time Market Risk Indicator">
-  <meta property="og:description" content="Live macro stress index tracking global yields, volatility, and credit tension. Updated daily.">
-  <meta name="description" content="Live macro stress index tracking global yields, volatility, and credit tension. Updated daily.">
+  <meta property="og:title" content="Game Over Gauge – Market Risk Assessment">
+  <meta property="og:description" content="Daily market risk monitoring for institutional investors and portfolio managers.">
+  <meta name="description" content="Daily market risk monitoring for institutional investors and portfolio managers.">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; color:#111; }
-    iframe { width:100%; height:700px; border:0; }
-    .wrap { max-width: 1100px; margin: 0 auto; }
-    header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    small { color:#555; }
+    :root {
+      --navy: #1a2a3a;
+      --dark-gray: #2d3e4f;
+      --medium-gray: #556b7b;
+      --light-gray: #8b9aaa;
+      --pale-gray: #e8eaed;
+      --off-white: #f5f6f7;
+      --accent: #1e5a96;
+      --border: #d0d5db;
+    }
+    
+    * { 
+      box-sizing: border-box; 
+    }
+    
+    html, body { 
+      margin: 0; 
+      padding: 0;
+    }
+    
+    body { 
+      font-family: 'Georgia', 'Garamond', serif;
+      background: var(--off-white);
+      color: var(--navy);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+    
+    .wrap { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 60px 40px;
+    }
+    
+    header {
+      margin-bottom: 48px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 32px;
+    }
+    
+    h1 {
+      font-size: 42px;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      color: var(--navy);
+      letter-spacing: 0;
+      font-family: 'Georgia', serif;
+    }
+    
+    .header-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .header-left {
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    .header-right {
+      text-align: right;
+    }
+    
+    .tagline {
+      font-size: 14px;
+      color: var(--medium-gray);
+      margin: 0;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    
+    .data-link {
+      display: inline-block;
+      margin-top: 12px;
+    }
+    
+    .data-link a {
+      padding: 8px 14px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    .data-link a:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    
+    .hook {
+      background: white;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 2px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+      font-size: 15px;
+      color: var(--dark-gray);
+      letter-spacing: 0;
+      line-height: 1.8;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .hook strong {
+      color: var(--navy);
+      font-weight: 700;
+    }
+    
+    .dashboard-section {
+      margin-bottom: 40px;
+    }
+    
+    iframe {
+      width: 100%;
+      height: 900px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .footer-section {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--medium-gray);
+      line-height: 1.8;
+    }
+    
+    .footer-note {
+      margin: 0 0 12px 0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    .disclaimer {
+      font-size: 11px;
+      color: var(--light-gray);
+      font-style: italic;
+      margin: 16px 0 0 0;
+      line-height: 1.6;
+    }
+    
+    @media (max-width: 768px) {
+      .wrap {
+        padding: 40px 24px;
+      }
+      
+      h1 {
+        font-size: 32px;
+      }
+      
+      .header-info {
+        flex-direction: column;
+      }
+      
+      .header-right {
+        text-align: left;
+      }
+      
+      .hook {
+        font-size: 14px;
+        padding: 20px 24px;
+      }
+      
+      iframe {
+        height: 700px;
+      }
+    }
   </style>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QMBBYHRN"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-S6QMBBYHRN');
-</script>
+  
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QMBBYHRN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-S6QMBBYHRN');
+  </script>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Game Over Gauge</h1>
-      <small><a href="gauge.json">JSON</a></small>
+      <div class="header-info">
+        <div class="header-left">
+          <h1>Game Over Gauge</h1>
+          <p class="tagline">Market Risk Assessment Index</p>
+          <div class="data-link">
+            <a href="gauge.json">Data Export (JSON)</a>
+          </div>
+        </div>
+        <div class="header-right">
+          <p class="tagline">For Professional Investors</p>
+        </div>
+      </div>
     </header>
-    <iframe src="dashboard.html" title="Game Over Gauge"></iframe>
-    <p>Updated daily by GitHub Actions (if FRED_API_KEY configured). Source on GitHub.</p>
+    
+    <div class="hook">
+      <strong>Purpose:</strong> A quantitative assessment of global market stress conditions. Monitor underlying risk dynamics daily to identify structural shifts before they affect portfolio valuations.
+    </div>
+    
+    <div class="dashboard-section">
+      <iframe src="dashboard.html" title="Game Over Gauge - Market Risk Assessment"></iframe>
+    </div>
+    
+    <div class="footer-section">
+      <p class="footer-note"><strong>Update Frequency:</strong> Daily close</p>
+      <p class="footer-note"><strong>Data Source:</strong> deepseak-sdk</p>
+      <p class="disclaimer">This tool provides quantitative market analysis based on historical data and current market indicators. Past performance does not guarantee future results. All investments carry risk. Consult with your investment advisor before making portfolio decisions.</p>
+    </div>
   </div>
 </body>
 </html>
