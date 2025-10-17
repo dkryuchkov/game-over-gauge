@@ -75,35 +75,55 @@ def post_mastodon(caption, page_url):
     except Exception as e:
         log(f"❌ Mastodon: {e}")
 
-def post_bluesky(caption, page_url):
-    handle = os.getenv("BSKY_HANDLE","").strip()
-    app_pw = os.getenv("BSKY_APP_PASSWORD","").strip()
-    if not handle or not app_pw: return
+def post_bluesky(gauge, caption, page_url):
+    handle = getenv_nonempty("BSKY_HANDLE")
+    app_pw = getenv_nonempty("BSKY_APP_PASSWORD")
+    if not handle or not app_pw:
+        warn(f"Skip Bluesky: BSKY_HANDLE/BSKY_APP_PASSWORD missing "
+             f"(handle={'set' if handle else 'missing'}, app_pw={'set' if app_pw else 'missing'}).")
+        return
     try:
-        sess = requests.post(
+        log("Bluesky createSession …")
+        s = requests.post(
             "https://bsky.social/xrpc/com.atproto.server.createSession",
             json={"identifier": handle, "password": app_pw},
             timeout=20
-        ).json()
-        msg = f"Game Over Gauge: {caption} {utm(page_url, 'bluesky')}"
+        )
+        if s.status_code >= 400:
+            err(f"Bluesky session HTTP {s.status_code}: {_brief_response_text(s)}")
+            s.raise_for_status()
+        sess = s.json()
+
+        # Bluesky text hard limit ≈ 300 chars; stay conservative (280)
+        base = f"Game Over Gauge: {caption} {utm(page_url, 'bluesky')}"
+        text = (base[:277] + "…") if len(base) > 280 else base
+
+        body = {
+            "repo": sess["did"],
+            "collection": "app.bsky.feed.post",
+            "record": {
+                "$type": "app.bsky.feed.post",
+                "text": text,
+                "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
+                "langs": ["en"],  # helps validation & discovery
+            },
+        }
+        log("Bluesky createRecord …")
         r = requests.post(
             "https://bsky.social/xrpc/com.atproto.repo.createRecord",
             headers={"Authorization": f"Bearer {sess['accessJwt']}"},
-            json={
-                "repo": sess["did"],
-                "collection": "app.bsky.feed.post",
-                "record": {
-                    "$type": "app.bsky.feed.post",
-                    "text": msg,
-                    "createdAt": datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
-                },
-            },
+            json=body,
             timeout=20
         )
-        r.raise_for_status()
-        log("✅ Bluesky posted.")
+        if r.status_code == 400:
+            # Log full-ish body to diagnose (e.g., TooLongText, BadToken)
+            warn(f"Bluesky 400: {_brief_response_text(r)}")
+        if r.status_code >= 400:
+            err(f"Bluesky post HTTP {r.status_code}: {_brief_response_text(r)}")
+            r.raise_for_status()
+        ok("Bluesky posted.")
     except Exception as e:
-        log(f"❌ Bluesky: {e}")
+        err(f"Bluesky error: {e}")
 
 def post_x(caption, page_url):
     api_key = os.getenv("X_API_KEY","").strip()
@@ -160,35 +180,51 @@ def post_linkedin(caption, page_url):
     except Exception as e:
         log(f"❌ LinkedIn: {e}")
 
-def post_reddit(caption, page_url):
-    cid  = os.getenv("REDDIT_CLIENT_ID","").strip()
-    csec = os.getenv("REDDIT_CLIENT_SECRET","").strip()
-    user = os.getenv("REDDIT_USERNAME","").strip()
-    pwd  = os.getenv("REDDIT_PASSWORD","").strip()
-    sub  = os.getenv("REDDIT_SUBREDDIT","").strip() or "investing"
-    if not all([cid,csec,user,pwd]): return
+def post_reddit(gauge, caption, page_url):
+    cid  = getenv_nonempty("REDDIT_CLIENT_ID")
+    csec = getenv_nonempty("REDDIT_CLIENT_SECRET")
+    user = getenv_nonempty("REDDIT_USERNAME")
+    pwd  = getenv_nonempty("REDDIT_PASSWORD")
+    sub  = getenv_nonempty("REDDIT_SUBREDDIT") or "investing"
+    if not all([cid, csec, user, pwd]):
+        warn("Skip Reddit: one or more secrets missing "
+             f"(client_id={'set' if cid else 'missing'}, secret={'set' if csec else 'missing'}, "
+             f"user={'set' if user else 'missing'}, password={'set' if pwd else 'missing'}).")
+        return
     try:
-        tok = requests.post(
+        log("Reddit: fetching access token …")
+        tok_r = requests.post(
             "https://www.reddit.com/api/v1/access_token",
-            auth=(cid, csec),
-            data={"grant_type":"password","username":user,"password":pwd},
-            headers={"User-Agent":"gog-poster/1.0"},
+            auth=(cid, csec),  # HTTP Basic with client_id:client_secret
+            data={"grant_type": "password", "username": user, "password": pwd},
+            headers={"User-Agent": "gog-poster/1.0"},
             timeout=20
-        ).json()["access_token"]
+        )
+        if tok_r.status_code >= 400:
+            err(f"Reddit token HTTP {tok_r.status_code}: {_brief_response_text(tok_r)}")
+            return  # don’t crash; just skip reddit
+        tok_json = tok_r.json()
+        access_token = tok_json.get("access_token")
+        if not access_token:
+            err(f"Reddit token missing access_token: {tok_json}")
+            return
 
         title = f"Game Over Gauge – {gauge['total_score_percent']}% ({gauge['band']})"
         body  = f"{caption}\n\n{utm(page_url, 'reddit')}"
 
+        log(f"Reddit: posting to r/{sub} …")
         r = requests.post(
             "https://oauth.reddit.com/api/submit",
-            headers={"Authorization": f"bearer {tok}", "User-Agent":"gog-poster/1.0"},
-            data={"sr": sub, "kind":"self", "title": title, "text": body},
+            headers={"Authorization": f"bearer {access_token}", "User-Agent":"gog-poster/1.0"},
+            data={"sr": sub, "kind": "self", "title": title, "text": body},
             timeout=20
         )
-        r.raise_for_status()
-        log(f"✅ Reddit posted to r/{sub}.")
+        if r.status_code >= 400:
+            err(f"Reddit post HTTP {r.status_code}: {_brief_response_text(r)}")
+            return
+        ok(f"Reddit posted to r/{sub}.")
     except Exception as e:
-        log(f"❌ Reddit: {e}")
+        err(f"Reddit error: {e}")
 
 if __name__ == "__main__":
     log("Fetching gauge…")
