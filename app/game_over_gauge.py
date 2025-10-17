@@ -70,8 +70,71 @@ MAX_TREND_PENALTY = 10.0
 
 DEFAULT_OUTPUT_HTML = os.getenv("OUTPUT_HTML", "dashboard.html")
 DEFAULT_OUTPUT_JSON = os.getenv("OUTPUT_JSON", "gauge.json")
+DEFAULT_YIELDS_JSON = os.getenv("OUTPUT_YIELDS_JSON", "yields.json")
 
 USER_AGENT = {"User-Agent": "game-over-gauge/2.4 (+local)"}
+
+# =========================
+# Static yield dataset
+# =========================
+YIELD_PRODUCTS: List[Dict[str, object]] = [
+    {
+        "name": "Ondo",
+        "product": "USDY",
+        "access": "Global retail (KYC + wallet whitelist)",
+        "chain": ["Ethereum", "Solana", "Layer2"],
+        "kyc_required": True,
+        "min_initial_usd": 500,
+        "docs": "https://docs.ondo.finance/general-access-products/usdy/faq/eligibility",
+    },
+    {
+        "name": "Ondo",
+        "product": "OUSG",
+        "access": "Qualified/accredited",
+        "chain": ["Ethereum", "Layer2"],
+        "kyc_required": True,
+        "min_instant_usd": 5000,
+        "min_non_instant_mint_usd": 100000,
+        "min_non_instant_redeem_usd": 50000,
+        "docs": "https://docs.ondo.finance/qualified-access-products/ousg/instant-limits",
+    },
+    {
+        "name": "OpenEden",
+        "product": "TBILL",
+        "access": "Global investors (KYC + wallet whitelist)",
+        "chain": ["Ethereum"],
+        "kyc_required": True,
+        "min_initial_usd": 100000,
+        "min_subsequent_usd": 1000,
+        "docs": "https://docs.openeden.com/tbill/faq",
+    },
+    {
+        "name": "Matrixdock",
+        "product": "STBT",
+        "access": "Accredited/professional",
+        "chain": ["Ethereum"],
+        "kyc_required": True,
+        "min_initial_usd": 100000,
+        "docs": "https://forum.arbitrum.foundation/t/matrixdock-stbt-step-application/23584",
+    },
+    {
+        "name": "Franklin Templeton",
+        "product": "BUIDL/FOBXX",
+        "access": "Institutional/accredited",
+        "chain": ["Stellar", "Polygon"],
+        "kyc_required": True,
+        "docs": "https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX",
+    },
+    {
+        "name": "Maple Finance",
+        "product": "Cash Management (UST bills)",
+        "access": "DAOs/funds; accredited",
+        "chain": ["Ethereum"],
+        "kyc_required": True,
+        "notes": "Targets 1-month UST yield minus 0.5% fees",
+        "docs": "https://maple.finance/insights/maple-cash-management-opens-to-us-investors",
+    },
+]
 
 # =========================
 # Gauge bands
@@ -661,9 +724,21 @@ def main():
     with open(DEFAULT_OUTPUT_HTML, "w", encoding="utf-8") as f:
         f.write(html)
 
+    yields_payload = {
+        "as_of_utc": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "issuers": YIELD_PRODUCTS,
+    }
+    with open(DEFAULT_YIELDS_JSON, "w", encoding="utf-8") as f:
+        json.dump(yields_payload, f, indent=2)
+
     logging.info(
-        "Gauge: %.1f%% (%s) | explainer=%s | JSON=%s | HTML=%s",
-        total_score, band_name, explanation_source, DEFAULT_OUTPUT_JSON, DEFAULT_OUTPUT_HTML
+        "Gauge: %.1f%% (%s) | explainer=%s | JSON=%s | HTML=%s | Yields=%s",
+        total_score,
+        band_name,
+        explanation_source,
+        DEFAULT_OUTPUT_JSON,
+        DEFAULT_OUTPUT_HTML,
+        DEFAULT_YIELDS_JSON,
     )
 
 if __name__ == "__main__":

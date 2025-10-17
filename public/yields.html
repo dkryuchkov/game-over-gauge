@@ -1,0 +1,165 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Safe Yield Scanner – Tokenised Treasuries</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta property="og:title" content="Safe Yield Scanner – Tokenised Treasuries">
+  <meta property="og:description" content="Compare tokenised U.S. Treasury options in plain English. Who can access them, typical minimums, and how to start.">
+  <meta name="description" content="Compare tokenised U.S. Treasury options in plain English. Who can access them, typical minimums, and how to start.">
+  <style>
+    :root {
+      --navy: #1a2a3a;
+      --dark-gray: #2d3e4f;
+      --medium-gray: #556b7b;
+      --light-gray: #8b9aaa;
+      --pale-gray: #e8eaed;
+      --off-white: #f5f6f7;
+      --accent: #1e5a96;
+      --border: #d0d5db;
+      --card-bg: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', 'Garamond', serif;
+      background: var(--off-white);
+      color: var(--navy);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 60px 40px; }
+    header { margin-bottom: 32px; }
+    h1 { font-size: 36px; margin: 0 0 8px; }
+    p.muted { color: var(--medium-gray); margin: 0 0 20px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .table th, .table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--pale-gray);
+      text-align: left;
+      font-size: 15px;
+      vertical-align: top;
+    }
+    .table th {
+      background: #f9fafb;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-weight: 700;
+      color: var(--dark-gray);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--dark-gray);
+    }
+    .foot {
+      font-size: 12px;
+      color: var(--light-gray);
+      margin-top: 16px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    .back { margin-top: 24px; font-size: 14px; }
+    @media (max-width: 768px) {
+      .wrap { padding: 40px 24px; }
+      h1 { font-size: 28px; }
+      .table th, .table td { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Safe Yield Scanner</h1>
+      <p class="muted">Tokenised U.S. Treasuries in plain English — who can access them, typical minimums, and where to start.</p>
+    </header>
+
+    <table class="table" aria-label="Tokenised Treasury comparison">
+      <thead>
+        <tr>
+          <th>Issuer</th>
+          <th>Product</th>
+          <th>Access</th>
+          <th>KYC</th>
+          <th>Chain</th>
+          <th>Typical Min</th>
+          <th>Docs</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Ondo</strong></td>
+          <td>USDY <span class="badge">Retail</span></td>
+          <td>Global investors (KYC + whitelist)</td>
+          <td>Yes</td>
+          <td>Multi-chain</td>
+          <td>Low</td>
+          <td><a href="https://docs.ondo.finance/general-access-products/usdy/faq/eligibility" rel="noopener">Learn more</a></td>
+        </tr>
+        <tr>
+          <td><strong>Ondo</strong></td>
+          <td>OUSG <span class="badge">Qualified</span></td>
+          <td>Qualified/accredited</td>
+          <td>Yes</td>
+          <td>Ethereum/L2</td>
+          <td>USD 5k instant; USD 100k non-instant</td>
+          <td><a href="https://docs.ondo.finance/qualified-access-products/ousg/instant-limits" rel="noopener">Learn more</a></td>
+        </tr>
+        <tr>
+          <td><strong>OpenEden</strong></td>
+          <td>TBILL <span class="badge">Pro</span></td>
+          <td>Global (KYC + whitelist)</td>
+          <td>Yes</td>
+          <td>Ethereum</td>
+          <td>USD 100k first; USD 1k+</td>
+          <td><a href="https://docs.openeden.com/tbill/faq" rel="noopener">Learn more</a></td>
+        </tr>
+        <tr>
+          <td><strong>Matrixdock</strong></td>
+          <td>STBT <span class="badge">Accredited</span></td>
+          <td>Accredited investors</td>
+          <td>Yes</td>
+          <td>Ethereum</td>
+          <td>High (pro-tier)</td>
+          <td><a href="https://forum.arbitrum.foundation/t/matrixdock-stbt-step-application/23584" rel="noopener">Learn more</a></td>
+        </tr>
+        <tr>
+          <td><strong>Franklin Templeton</strong></td>
+          <td>BUIDL / FOBXX</td>
+          <td>Institutional/accredited</td>
+          <td>Yes</td>
+          <td>Public chain</td>
+          <td>Institutional</td>
+          <td><a href="https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX" rel="noopener">Learn more</a></td>
+        </tr>
+        <tr>
+          <td><strong>Maple Finance</strong></td>
+          <td>Cash Management</td>
+          <td>DAOs/funds; accredited</td>
+          <td>Yes</td>
+          <td>Ethereum</td>
+          <td>Varies</td>
+          <td><a href="https://maple.finance/insights/maple-cash-management-opens-to-us-investors" rel="noopener">Learn more</a></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="foot">Data points are sourced from official issuer docs linked above and may change. Always confirm details during KYC.</p>
+
+    <div class="back"><a href="index.html" aria-label="Back to gauge">← Back to Game Over Gauge</a></div>
+  </div>
+</body>
+</html>
