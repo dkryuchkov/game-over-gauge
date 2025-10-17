@@ -4,9 +4,9 @@
   <meta charset="utf-8"/>
   <title>Game Over Gauge</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta property="og:title" content="Game Over Gauge – Market Risk Assessment">
-  <meta property="og:description" content="Daily market risk monitoring for institutional investors and portfolio managers.">
-  <meta name="description" content="Daily market risk monitoring for institutional investors and portfolio managers.">
+  <meta property="og:title" content="Game Over Gauge – Market Crash Risk & Safe Yield Guide">
+  <meta property="og:description" content="A daily gauge of global market risk — see crash danger building before it hits your portfolio, and where to earn safe yield while you wait.">
+  <meta name="description" content="A daily gauge of global market risk — see crash danger building before it hits your portfolio, and where to earn safe yield while you wait.">
   <style>
     :root {
       --navy: #1a2a3a;
@@ -18,36 +18,26 @@
       --accent: #1e5a96;
       --border: #d0d5db;
     }
-    
-    * { 
-      box-sizing: border-box; 
-    }
-    
-    html, body { 
-      margin: 0; 
-      padding: 0;
-    }
-    
-    body { 
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+
+    body {
       font-family: 'Georgia', 'Garamond', serif;
       background: var(--off-white);
       color: var(--navy);
       line-height: 1.7;
       min-height: 100vh;
     }
-    
-    .wrap { 
-      max-width: 1200px; 
-      margin: 0 auto; 
-      padding: 60px 40px;
-    }
-    
+
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 60px 40px; }
+
     header {
       margin-bottom: 48px;
       border-bottom: 2px solid var(--border);
       padding-bottom: 32px;
     }
-    
+
     h1 {
       font-size: 42px;
       font-weight: 700;
@@ -56,7 +46,7 @@
       letter-spacing: 0;
       font-family: 'Georgia', serif;
     }
-    
+
     .header-info {
       display: flex;
       justify-content: space-between;
@@ -64,16 +54,10 @@
       gap: 24px;
       flex-wrap: wrap;
     }
-    
-    .header-left {
-      flex: 1;
-      min-width: 300px;
-    }
-    
-    .header-right {
-      text-align: right;
-    }
-    
+
+    .header-left { flex: 1; min-width: 300px; }
+    .header-right { text-align: right; }
+
     .tagline {
       font-size: 14px;
       color: var(--medium-gray);
@@ -82,12 +66,8 @@
       letter-spacing: 0.5px;
       text-transform: uppercase;
     }
-    
-    .data-link {
-      display: inline-block;
-      margin-top: 12px;
-    }
-    
+
+    .data-link { display: inline-block; margin-top: 12px; }
     .data-link a {
       padding: 8px 14px;
       background: white;
@@ -102,13 +82,8 @@
       transition: all 0.2s ease;
       font-family: 'Helvetica Neue', Arial, sans-serif;
     }
-    
-    .data-link a:hover {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-    
+    .data-link a:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
     .hook {
       background: white;
       border: 1px solid var(--border);
@@ -122,16 +97,11 @@
       line-height: 1.8;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
-    
-    .hook strong {
-      color: var(--navy);
-      font-weight: 700;
-    }
-    
-    .dashboard-section {
-      margin-bottom: 40px;
-    }
-    
+    .hook strong { color: var(--navy); font-weight: 700; }
+    .hook .sub { display:block; margin-top:8px; color: var(--medium-gray); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; }
+
+    .dashboard-section { margin-bottom: 40px; }
+
     iframe {
       width: 100%;
       height: 900px;
@@ -140,7 +110,7 @@
       background: white;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
-    
+
     .footer-section {
       margin-top: 40px;
       padding-top: 32px;
@@ -149,48 +119,20 @@
       color: var(--medium-gray);
       line-height: 1.8;
     }
-    
-    .footer-note {
-      margin: 0 0 12px 0;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-    }
-    
-    .disclaimer {
-      font-size: 11px;
-      color: var(--light-gray);
-      font-style: italic;
-      margin: 16px 0 0 0;
-      line-height: 1.6;
-    }
-    
+
+    .footer-note { margin: 0 0 12px 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
+    .disclaimer { font-size: 11px; color: var(--light-gray); font-style: italic; margin: 16px 0 0 0; line-height: 1.6; }
+
     @media (max-width: 768px) {
-      .wrap {
-        padding: 40px 24px;
-      }
-      
-      h1 {
-        font-size: 32px;
-      }
-      
-      .header-info {
-        flex-direction: column;
-      }
-      
-      .header-right {
-        text-align: left;
-      }
-      
-      .hook {
-        font-size: 14px;
-        padding: 20px 24px;
-      }
-      
-      iframe {
-        height: 700px;
-      }
+      .wrap { padding: 40px 24px; }
+      h1 { font-size: 32px; }
+      .header-info { flex-direction: column; }
+      .header-right { text-align: left; }
+      .hook { font-size: 14px; padding: 20px 24px; }
+      iframe { height: 700px; }
     }
   </style>
-  
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QMBBYHRN"></script>
   <script>
@@ -206,29 +148,30 @@
       <div class="header-info">
         <div class="header-left">
           <h1>Game Over Gauge</h1>
-          <p class="tagline">Market Risk Assessment Index</p>
+          <p class="tagline">Market Crash Risk & Safe Yield Guide</p>
           <div class="data-link">
             <a href="gauge.json">Data Export (JSON)</a>
           </div>
         </div>
         <div class="header-right">
-          <p class="tagline">For Professional Investors</p>
+          <p class="tagline">For Professional & Serious Investors</p>
         </div>
       </div>
     </header>
-    
+
     <div class="hook">
-      <strong>Purpose:</strong> A quantitative assessment of global market stress conditions. Monitor underlying risk dynamics daily to identify structural shifts before they affect portfolio valuations.
+      <strong>A daily gauge of global market risk — see crash danger building before it hits your portfolio.</strong>
+      <span class="sub">When risk rises, don’t sit idle: rotate to safe yield (tokenised U.S. Treasuries) and get paid while you wait.</span>
     </div>
-    
+
     <div class="dashboard-section">
-      <iframe src="dashboard.html" title="Game Over Gauge - Market Risk Assessment"></iframe>
+      <iframe src="dashboard.html" title="Game Over Gauge - Market Crash Risk"></iframe>
     </div>
-    
+
     <div class="footer-section">
       <p class="footer-note"><strong>Update Frequency:</strong> Daily close</p>
-      <p class="footer-note"><strong>Data Source:</strong> deepseak-sdk</p>
-      <p class="disclaimer">This tool provides quantitative market analysis based on historical data and current market indicators. Past performance does not guarantee future results. All investments carry risk. Consult with your investment advisor before making portfolio decisions.</p>
+      <p class="footer-note"><strong>Data Source:</strong> See <a href="gauge.json">gauge.json</a> for the latest build metadata and components.</p>
+      <p class="disclaimer">This tool provides quantitative market analysis based on historical data and current indicators. It is not financial advice. Past performance does not guarantee future results. Consult a licensed advisor before making investment decisions.</p>
     </div>
   </div>
 </body>
