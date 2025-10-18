@@ -2,6 +2,15 @@
 <html>
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QMBBYHRN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-S6QMBBYHRN');
+  </script>
   <meta charset="utf-8" />
   <title>Game Over Gauge</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -479,7 +488,7 @@
       background-clip: text;
     }
 
-    .section > p {
+    .section>p {
       font-size: 15px;
       color: #a8b5c4;
       margin: 0 0 16px 0;
@@ -908,23 +917,28 @@
     <!-- Section 2: How to Get Started (Beginner Mode) -->
     <section class="section" id="getting-started">
       <h2>How to Get <span class="gradient">Started — Beginner Mode</span></h2>
-      <p><strong>Goal:</strong> Hold a tokenised U.S. Treasury product in self-custody and earn yield passively. Follow the steps exactly. No prior crypto experience required.</p>
+      <p><strong>Goal:</strong> Hold a tokenised U.S. Treasury product in self-custody and earn yield passively. Follow
+        the steps exactly. No prior crypto experience required.</p>
 
       <div class="steps-container">
         <!-- Step 1 -->
         <div class="step">
           <div class="step-number">1</div>
           <div class="step-title">Set up your hardware wallet (Ledger)</div>
-          <p class="step-desc"><strong>Why:</strong> Self-custody means you control the keys; exchanges can freeze funds or fail.</p>
+          <p class="step-desc"><strong>Why:</strong> Self-custody means you control the keys; exchanges can freeze funds
+            or fail.</p>
           <ol class="step-desc">
             <li>Download <em>Ledger Live</em> from the official site. Install and open it.</li>
-            <li>Initialize the Ledger device → create a new wallet → write the 24-word recovery phrase on paper (never digital).</li>
+            <li>Initialize the Ledger device → create a new wallet → write the 24-word recovery phrase on paper (never
+              digital).</li>
             <li>Update device firmware in Ledger Live.</li>
             <li>In <em>My Ledger</em>, install the <strong>Ethereum</strong> app on the device.</li>
             <li>(Optional) Connect Ledger to MetaMask so you can sign transactions with hardware security.</li>
           </ol>
-          <p class="step-desc"><strong>Checklist:</strong> 24-word phrase saved offline • PIN set • Ethereum app installed.</p>
-          <p class="step-desc"><strong>Safety:</strong> Keep ~$10–$30 worth of ETH for gas fees. Send it to your Ledger address first.</p>
+          <p class="step-desc"><strong>Checklist:</strong> 24-word phrase saved offline • PIN set • Ethereum app
+            installed.</p>
+          <p class="step-desc"><strong>Safety:</strong> Keep ~$10–$30 worth of ETH for gas fees. Send it to your Ledger
+            address first.</p>
         </div>
 
         <!-- Step 2 -->
@@ -934,24 +948,28 @@
           <p class="step-desc"><strong>Why:</strong> Most tokenised Treasuries mint/redeem using USDC on Ethereum.</p>
           <ol class="step-desc">
             <li>On a reputable exchange (Coinbase, Kraken), buy <strong>USDC (Ethereum network)</strong>.</li>
-            <li>Withdraw USDC to your Ledger-controlled Ethereum address. <em>Paste the address exactly; send a small test first.</em></li>
+            <li>Withdraw USDC to your Ledger-controlled Ethereum address. <em>Paste the address exactly; send a small
+                test first.</em></li>
             <li>Confirm USDC arrival in your wallet. If not visible, add the USDC contract manually.</li>
           </ol>
-          <p class="step-desc"><strong>Gotcha:</strong> Ensure you selected <em>ERC-20 (Ethereum)</em> network. Wrong network = permanent loss.</p>
+          <p class="step-desc"><strong>Gotcha:</strong> Ensure you selected <em>ERC-20 (Ethereum)</em> network. Wrong
+            network = permanent loss.</p>
         </div>
 
         <!-- Step 3 -->
         <div class="step">
           <div class="step-number">3</div>
           <div class="step-title">Create issuer account & complete KYC (e.g., Ondo USDY)</div>
-          <p class="step-desc"><strong>Why:</strong> These hold real T-bills; issuers must verify investor identity and whitelist your wallet.</p>
+          <p class="step-desc"><strong>Why:</strong> These hold real T-bills; issuers must verify investor identity and
+            whitelist your wallet.</p>
           <ol class="step-desc">
             <li>Create an account on the issuer's site (e.g., Ondo Finance).</li>
             <li>Complete identity verification (government ID + liveness check).</li>
             <li>Submit your <strong>exact</strong> Ledger wallet address to be whitelisted.</li>
             <li>Wait for "approved/whitelisted" status (usually quick during business hours).</li>
           </ol>
-          <p class="step-desc"><strong>Note:</strong> Availability depends on your jurisdiction. U.S. persons may face restrictions.</p>
+          <p class="step-desc"><strong>Note:</strong> Availability depends on your jurisdiction. U.S. persons may face
+            restrictions.</p>
         </div>
 
         <!-- Step 4 -->
@@ -960,12 +978,14 @@
           <div class="step-title">Mint the Treasury token (e.g., USDY)</div>
           <ol class="step-desc">
             <li>Connect your wallet via MetaMask (linked to Ledger). Select <strong>Ethereum mainnet</strong>.</li>
-            <li>On the issuer's "Mint" page, pick the token (USDY), amount ($1,000+), and set source to <strong>USDC</strong>.</li>
+            <li>On the issuer's "Mint" page, pick the token (USDY), amount ($1,000+), and set source to
+              <strong>USDC</strong>.</li>
             <li>First transaction: <strong>Approve</strong> USDC spend (one-time). Sign with Ledger.</li>
             <li>Second transaction: <strong>Mint</strong> the token. Sign with Ledger.</li>
             <li>Wait for confirmation; the token will appear in your wallet.</li>
           </ol>
-          <p class="step-desc"><strong>Yield:</strong> No staking needed. Returns reflect in the token's redemption value over time; you just hold.</p>
+          <p class="step-desc"><strong>Yield:</strong> No staking needed. Returns reflect in the token's redemption
+            value over time; you just hold.</p>
         </div>
 
         <!-- Step 5 -->
@@ -973,12 +993,14 @@
           <div class="step-number">5</div>
           <div class="step-title">Redeem back to USDC (exit anytime)</div>
           <ol class="step-desc">
-            <li>On the issuer's "Redeem" page, select your token balance (e.g., USDY) and target <strong>USDC</strong>.</li>
+            <li>On the issuer's "Redeem" page, select your token balance (e.g., USDY) and target <strong>USDC</strong>.
+            </li>
             <li>Confirm the whitelisted wallet will receive USDC (must match KYC address).</li>
             <li>Sign the redemption transaction(s) with Ledger.</li>
             <li>When USDC arrives, withdraw to your exchange → sell to fiat → transfer to your bank.</li>
           </ol>
-          <p class="step-desc"><strong>Timing:</strong> On-chain is instant; fiat depends on your bank. No lock-ups under normal conditions.</p>
+          <p class="step-desc"><strong>Timing:</strong> On-chain is instant; fiat depends on your bank. No lock-ups
+            under normal conditions.</p>
         </div>
 
         <!-- Step 6: Safety -->
@@ -986,12 +1008,16 @@
           <div class="step-number" style="background: linear-gradient(135deg, #ff9933 0%, #ffaa55 100%);">!</div>
           <div class="step-title">Safety, Costs & Common Gotchas</div>
           <ul class="step-desc">
-            <li><strong>Network correctness:</strong> Always use <em>Ethereum (ERC-20)</em> for USDC unless the issuer explicitly supports another chain.</li>
+            <li><strong>Network correctness:</strong> Always use <em>Ethereum (ERC-20)</em> for USDC unless the issuer
+              explicitly supports another chain.</li>
             <li><strong>Gas budget:</strong> Keep a small ETH buffer for approvals, mint, and redeem transactions.</li>
             <li><strong>Whitelisting:</strong> Redemptions require the same whitelisted address used at KYC time.</li>
-            <li><strong>Impostor contracts:</strong> Add token contracts only from the issuer's official UI/docs, never third-party.</li>
-            <li><strong>Tax:</strong> AU/NZ treatment varies. Keep timestamps, transaction hashes, and issuer statements.</li>
-            <li><strong>Off-ramp:</strong> Your exchange must support your bank region (AUD/NZD) for smooth cash-out.</li>
+            <li><strong>Impostor contracts:</strong> Add token contracts only from the issuer's official UI/docs, never
+              third-party.</li>
+            <li><strong>Tax:</strong> AU/NZ treatment varies. Keep timestamps, transaction hashes, and issuer
+              statements.</li>
+            <li><strong>Off-ramp:</strong> Your exchange must support your bank region (AUD/NZD) for smooth cash-out.
+            </li>
           </ul>
         </div>
 
@@ -1000,11 +1026,15 @@
           <div class="step-number" style="background: linear-gradient(135deg, #cc99ff 0%, #dd99ff 100%);">?</div>
           <div class="step-title">Beginner FAQ</div>
           <ul class="step-desc">
-            <li><strong>Do I need to stake USDY?</strong> No. Just holding reflects the yield via the issuer's mechanism.</li>
-            <li><strong>Can I lose funds?</strong> Smart-contract, issuer, and custody risks exist. Use official UIs and hardware wallets.</li>
+            <li><strong>Do I need to stake USDY?</strong> No. Just holding reflects the yield via the issuer's
+              mechanism.</li>
+            <li><strong>Can I lose funds?</strong> Smart-contract, issuer, and custody risks exist. Use official UIs and
+              hardware wallets.</li>
             <li><strong>US person?</strong> Check issuer eligibility rules; additional restrictions may apply.</li>
-            <li><strong>Which chain?</strong> Use the chain the issuer supports (usually Ethereum mainnet for USDY).</li>
-            <li><strong>How long for KYC approval?</strong> Usually hours to 1 business day. Faster during weekday business hours.</li>
+            <li><strong>Which chain?</strong> Use the chain the issuer supports (usually Ethereum mainnet for USDY).
+            </li>
+            <li><strong>How long for KYC approval?</strong> Usually hours to 1 business day. Faster during weekday
+              business hours.</li>
           </ul>
         </div>
       </div>
@@ -1032,9 +1062,12 @@
 
     <!-- Footer -->
     <div class="footer-section">
-      <p><strong>Update Frequency:</strong> Daily close &nbsp;|&nbsp; <strong>Data Source:</strong> Institutional & on-chain feeds</p>
+      <p><strong>Update Frequency:</strong> Daily close &nbsp;|&nbsp; <strong>Data Source:</strong> Institutional &
+        on-chain feeds</p>
       <p style="margin-top: 12px; font-size: 11px; color: #556b7b; font-style: italic;">
-        This site is educational content, not financial advice. Tokenised Treasuries are subject to issuer terms, KYC/AML, and local laws. Availability for U.S. persons may be restricted. Always verify contract addresses on the issuer's official website and keep offline backups of your recovery phrase.
+        This site is educational content, not financial advice. Tokenised Treasuries are subject to issuer terms,
+        KYC/AML, and local laws. Availability for U.S. persons may be restricted. Always verify contract addresses on
+        the issuer's official website and keep offline backups of your recovery phrase.
       </p>
       <p style="margin-top: 8px; font-size: 11px; color: #556b7b; font-style: italic;">
         © Game Over Gauge. All rights reserved.

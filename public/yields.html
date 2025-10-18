@@ -1,12 +1,24 @@
 <!doctype html>
 <html>
+
 <head>
-  <meta charset="utf-8"/>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QMBBYHRN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-S6QMBBYHRN');
+  </script>
+  <meta charset="utf-8" />
   <title>Safe Yield Scanner – Tokenised Treasuries</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta property="og:title" content="Safe Yield Scanner – Tokenised Treasuries">
-  <meta property="og:description" content="Compare tokenised U.S. Treasury options in plain English. Who can access them, typical minimums, and how to start.">
-  <meta name="description" content="Compare tokenised U.S. Treasury options in plain English. Who can access them, typical minimums, and how to start.">
+  <meta property="og:description"
+    content="Compare tokenised U.S. Treasury options in plain English. Who can access them, typical minimums, and how to start.">
+  <meta name="description"
+    content="Compare tokenised U.S. Treasury options in plain English. Who can access them, typical minimums, and how to start.">
   <style>
     :root {
       --navy: #0f1419;
@@ -22,8 +34,15 @@
       --text-muted: #6b7a8b;
     }
 
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: 'Inter', 'Helvetica Neue', system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -33,19 +52,19 @@
       min-height: 100vh;
     }
 
-    .wrap { 
+    .wrap {
       max-width: 1200px;
       margin: 0 auto;
       padding: 60px 40px;
     }
 
-    header { 
+    header {
       margin-bottom: 48px;
       padding-bottom: 32px;
       border-bottom: 2px solid var(--border);
     }
 
-    h1 { 
+    h1 {
       font-size: 42px;
       font-weight: 900;
       margin: 0 0 12px 0;
@@ -57,14 +76,14 @@
       background-clip: text;
     }
 
-    p.muted { 
+    p.muted {
       color: var(--text-secondary);
       margin: 0;
       font-size: 16px;
       line-height: 1.6;
     }
 
-    a { 
+    a {
       color: var(--accent);
       text-decoration: none;
       font-weight: 600;
@@ -72,7 +91,7 @@
       position: relative;
     }
 
-    a:hover { 
+    a:hover {
       color: var(--success);
       text-decoration: underline;
     }
@@ -88,7 +107,8 @@
       backdrop-filter: blur(10px);
     }
 
-    .table th, .table td {
+    .table th,
+    .table td {
       padding: 16px 18px;
       border-bottom: 1px solid var(--border);
       text-align: left;
@@ -179,7 +199,7 @@
       border-radius: 4px;
     }
 
-    .back { 
+    .back {
       margin-top: 40px;
       font-size: 14px;
     }
@@ -202,22 +222,40 @@
     }
 
     @media (max-width: 768px) {
-      .wrap { padding: 40px 24px; }
-      h1 { font-size: 32px; }
-      header { margin-bottom: 32px; }
-      .table th, .table td { 
+      .wrap {
+        padding: 40px 24px;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+
+      header {
+        margin-bottom: 32px;
+      }
+
+      .table th,
+      .table td {
         font-size: 13px;
         padding: 12px 14px;
       }
-      .badge { font-size: 10px; padding: 3px 8px; }
+
+      .badge {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <header>
-      <h1>Safe Yield <span style="background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Scanner</span></h1>
-      <p class="muted">Tokenised U.S. Treasuries in plain English – who can access them, typical minimums, real yields, and where to start.</p>
+      <h1>Safe Yield <span
+          style="background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Scanner</span>
+      </h1>
+      <p class="muted">Tokenised U.S. Treasuries in plain English – who can access them, typical minimums, real yields,
+        and where to start.</p>
     </header>
 
     <table class="table" aria-label="Tokenised Treasury comparison">
@@ -243,7 +281,8 @@
           <td>Ethereum, Solana, L2</td>
           <td>Low (from $1k)</td>
           <td><strong>5.0%–5.2%</strong></td>
-          <td><a href="https://docs.ondo.finance/general-access-products/usdy/faq/eligibility" rel="noopener noreferrer">Docs →</a></td>
+          <td><a href="https://docs.ondo.finance/general-access-products/usdy/faq/eligibility"
+              rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>Ondo Finance</strong></td>
@@ -253,7 +292,8 @@
           <td>Ethereum, L2</td>
           <td>$5k instant; $100k non-instant</td>
           <td><strong>5.0%–5.2%</strong></td>
-          <td><a href="https://docs.ondo.finance/qualified-access-products/ousg/instant-limits" rel="noopener noreferrer">Docs →</a></td>
+          <td><a href="https://docs.ondo.finance/qualified-access-products/ousg/instant-limits"
+              rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>OpenEden</strong></td>
@@ -283,7 +323,9 @@
           <td>Stellar, Polygon</td>
           <td>Institutional minimum</td>
           <td><strong>4.8%–5.0%</strong></td>
-          <td><a href="https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX" rel="noopener noreferrer">Docs →</a></td>
+          <td><a
+              href="https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX"
+              rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>Maple Finance</strong></td>
@@ -293,7 +335,8 @@
           <td>Ethereum</td>
           <td>Varies by product</td>
           <td><strong>~5.2%</strong></td>
-          <td><a href="https://maple.finance/insights/maple-cash-management-opens-to-us-investors" rel="noopener noreferrer">Docs →</a></td>
+          <td><a href="https://maple.finance/insights/maple-cash-management-opens-to-us-investors"
+              rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>Superstate</strong></td>
@@ -309,7 +352,8 @@
     </table>
 
     <p class="foot">
-      <strong>Key takeaway:</strong> Start with Ondo USDY for retail access. Yields are real, backed by U.S. Treasuries, and paid daily. Always confirm current terms during KYC – rates and minimums change.
+      <strong>Key takeaway:</strong> Start with Ondo USDY for retail access. Yields are real, backed by U.S. Treasuries,
+      and paid daily. Always confirm current terms during KYC – rates and minimums change.
     </p>
 
     <div class="back">
@@ -318,13 +362,13 @@
   </div>
 
   <script>
-    (function() {
+    (function () {
       const tbody = document.getElementById('yield-rows');
       if (!tbody) return;
 
       function fmtUSD(n) {
         if (typeof n !== 'number' || isNaN(n)) return 'TBD';
-        if (n >= 1000) return '$' + (n/1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
+        if (n >= 1000) return '$' + (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
         return '$' + n.toString();
       }
 
@@ -420,4 +464,5 @@
     })();
   </script>
 </body>
+
 </html>
