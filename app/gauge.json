@@ -1,5 +1,5 @@
 {
-  "timestamp_utc": "2025-10-18 09:06:03",
+  "timestamp_utc": "2025-10-18 10:39:48",
   "total_score_percent": 32.0,
   "trend_penalty": 0.0,
   "band": "Cautious",
@@ -40,6 +40,6 @@
       "weight": 0.1
     }
   ],
-  "explanation": "Markets are in a cautious mood, with high yield credit risk flashing a warning sign. This is balanced by a slight drop in Treasury yields and a moderate level of investor fear. For now, it's a time to be selective and ensure your portfolio is well-diversified.",
+  "explanation": "Markets are in a cautious state with mixed signals. Bond yields are slightly lower, but high-yield credit stress remains elevated and stock volatility is high. This suggests a fragile environment where investors should focus on diversification and maintaining liquidity.",
   "explanation_source": "deepseek-sdk"
 }

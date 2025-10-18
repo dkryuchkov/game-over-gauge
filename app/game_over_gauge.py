@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import os, sys, json, math, logging, time
+import os, sys, json, math, logging, time, re
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Tuple, List
 from io import StringIO
+from html import escape
 
 import requests
 import pandas as pd
@@ -314,7 +315,31 @@ def _rest_generate_comment(api_key: str, score: float, band_name: str, penalty: 
     raise RuntimeError(last_err or "Unknown DeepSeek REST failure")
 
 # =========================
-# HTML template (UPDATED to your dark dashboard)
+# Explanation rendering (NEW)
+# =========================
+def explanation_to_html(raw: str) -> str:
+    """
+    Reflow messy newline-laden text into clean HTML paragraphs:
+      - Convert CRLF to LF
+      - Collapse spaces/tabs
+      - Limit blank lines
+      - Split by double newlines into paragraphs
+      - Single newlines become spaces within a paragraph
+      - HTML-escape content
+    """
+    s = str(raw or "")
+    s = s.replace("\r\n", "\n")
+    s = re.sub(r"[ \t]+", " ", s)
+    s = re.sub(r"\n{3,}", "\n\n", s)
+    s = s.strip()
+    if not s:
+        return "<p></p>"
+    paragraphs = [re.sub(r"\n+", " ", p).strip() for p in s.split("\n\n")]
+    paragraphs = [p for p in paragraphs if p]
+    return "".join(f"<p>{escape(p)}</p>" for p in paragraphs)
+
+# =========================
+# HTML template (UPDATED)
 # =========================
 def html_template() -> Template:
     return Template(r"""
@@ -420,7 +445,6 @@ def html_template() -> Template:
 
     .badge {
       -webkit-text-fill-color: var(--navy);
-      /* force solid text color */
       color: var(--navy);
       -webkit-background-clip: initial;
       background-clip: initial;
@@ -443,13 +467,17 @@ def html_template() -> Template:
       margin-top: 8px;
     }
 
+    /* UPDATED: clean paragraph rendering (no pre-wrap) */
     .explain { 
       margin-top: 16px;
       font-size: 14px;
       line-height: 1.7;
-      white-space: pre-wrap;
       color: #a8b5c4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
+    .explain p { margin: 0 0 10px 0; }
+    .explain p:last-child { margin-bottom: 0; }
 
     .source { 
       margin-top: 12px;
@@ -579,7 +607,8 @@ def html_template() -> Template:
           <span class="badge {{ badge_class }}">{{ band_name }}</span>
         </div>
         <div class="muted">As of {{ timestamp }} (UTC). Trend penalty applied: {{ trend_penalty|round(1) }} pts.</div>
-        <div class="explain">{{ explanation }}</div>
+        <!-- UPDATED: explanation rendered as sanitized paragraphs -->
+        <div class="explain">{{ explanation_html | safe }}</div>
         <div class="source">explanation_source: <strong>{{ explanation_source }}</strong></div>
       </div>
     </div>
@@ -674,7 +703,7 @@ def fetch_term_premium_any(fred_key: str) -> Tuple[pd.DataFrame, str]:
         raise RuntimeError("All term premium sources failed")
 
 # =========================
-# Yields catalog (kept from prior version)
+# Yields catalog
 # =========================
 def _apr_from_env(var: str) -> Optional[int]:
     v = getenv_int(var, None)
@@ -970,7 +999,6 @@ def main():
 
     ds_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
     explanation_source = "local"
-    explanation_text: str
 
     if not ds_key:
         logging.warning("DEEPSEEK_API_KEY not set; using local fallback text.")
@@ -994,6 +1022,9 @@ def main():
             explanation_text = _fallback_summary(total_score, penalty)
             explanation_source = "local"
 
+    # NEW: pre-render sanitized paragraph HTML
+    explanation_html = explanation_to_html(explanation_text)
+
     out_obj = {
         "timestamp_utc": ts,
         "total_score_percent": round(total_score, 1),
@@ -1016,7 +1047,8 @@ def main():
         needle_deg=needle_rotation_deg(total_score),
         band_paths=paths, tick_marks=tick_marks,
         band_name=band_name, band_color=band_color,
-        explanation=explanation_text, explanation_source=explanation_source,
+        explanation_html=explanation_html,  # <- updated
+        explanation_source=explanation_source,
         badge_class=badge_class,
     )
     with open(DEFAULT_OUTPUT_HTML, "w", encoding="utf-8") as f:

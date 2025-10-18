@@ -99,13 +99,16 @@
       background-clip: text;
     }
 
-    .badge { 
+    .badge {
+      -webkit-text-fill-color: var(--navy);
+      color: var(--navy);
+      -webkit-background-clip: initial;
+      background-clip: initial;
       display: inline-block;
       padding: 6px 14px;
       border-radius: 999px;
       font-size: 12px;
       font-weight: 700;
-      color: var(--navy);
       margin-left: 12px;
       vertical-align: middle;
     }
@@ -120,13 +123,17 @@
       margin-top: 8px;
     }
 
+    /* UPDATED: clean paragraph rendering (no pre-wrap) */
     .explain { 
       margin-top: 16px;
       font-size: 14px;
       line-height: 1.7;
-      white-space: pre-wrap;
       color: #a8b5c4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
+    .explain p { margin: 0 0 10px 0; }
+    .explain p:last-child { margin-bottom: 0; }
 
     .source { 
       margin-top: 12px;
@@ -297,8 +304,9 @@
           32.0%
           <span class="badge cautious">Cautious</span>
         </div>
-        <div class="muted">As of 2025-10-18 09:06:03 (UTC). Trend penalty applied: 0.0 pts.</div>
-        <div class="explain">Markets are in a cautious mood, with high yield credit risk flashing a warning sign. This is balanced by a slight drop in Treasury yields and a moderate level of investor fear. For now, it's a time to be selective and ensure your portfolio is well-diversified.</div>
+        <div class="muted">As of 2025-10-18 10:39:48 (UTC). Trend penalty applied: 0.0 pts.</div>
+        <!-- UPDATED: explanation rendered as sanitized paragraphs -->
+        <div class="explain"><p>Markets are in a cautious state with mixed signals. Bond yields are slightly lower, but high-yield credit stress remains elevated and stock volatility is high. This suggests a fragile environment where investors should focus on diversification and maintaining liquidity.</p></div>
         <div class="source">explanation_source: <strong>deepseek-sdk</strong></div>
       </div>
     </div>
