@@ -1,0 +1,84 @@
+{
+  "as_of_utc": "2025-10-18T09:06:08Z",
+  "issuers": [
+    {
+      "name": "Ondo",
+      "product": "USDY",
+      "access": "Non-US retail (KYC + wallet whitelist)",
+      "chain": [
+        "Ethereum",
+        "Bridges/Solana/L2"
+      ],
+      "kyc_required": true,
+      "docs": "https://docs.ondo.finance/general-access-products/usdy/faq/eligibility",
+      "min_initial_usd": 500
+    },
+    {
+      "name": "Ondo",
+      "product": "OUSG",
+      "access": "Qualified/accredited investors",
+      "chain": [
+        "Ethereum",
+        "Layer2"
+      ],
+      "kyc_required": true,
+      "docs": "https://docs.ondo.finance/qualified-access-products/ousg/instant-limits",
+      "min_instant_usd": 5000,
+      "min_non_instant_mint_usd": 100000
+    },
+    {
+      "name": "OpenEden",
+      "product": "TBILL",
+      "access": "Global (KYC + wallet whitelist)",
+      "chain": [
+        "Ethereum"
+      ],
+      "kyc_required": true,
+      "docs": "https://docs.openeden.com/tbill/faq",
+      "min_initial_usd": 100000,
+      "min_subsequent_usd": 1000
+    },
+    {
+      "name": "Matrixdock",
+      "product": "STBT",
+      "access": "Accredited/Professional investors",
+      "chain": [
+        "Ethereum"
+      ],
+      "kyc_required": true,
+      "docs": "https://forum.arbitrum.foundation/t/matrixdock-stbt-step-application/23584",
+      "min_initial_usd": 100000
+    },
+    {
+      "name": "Franklin Templeton",
+      "product": "BUIDL/FOBXX",
+      "access": "Institutional/accredited",
+      "chain": [
+        "Public chain"
+      ],
+      "kyc_required": true,
+      "docs": "https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX"
+    },
+    {
+      "name": "Maple Finance",
+      "product": "Cash Management (UST bills)",
+      "access": "DAOs/funds; US accredited",
+      "chain": [
+        "Ethereum"
+      ],
+      "kyc_required": true,
+      "docs": "https://maple.finance/insights/maple-cash-management-opens-to-us-investors",
+      "notes": "Targets ~1M UST yield minus fees."
+    },
+    {
+      "name": "Superstate",
+      "product": "USTB",
+      "access": "Institutional-leaning",
+      "chain": [
+        "Ethereum"
+      ],
+      "kyc_required": true,
+      "docs": "https://superstate.co/"
+    }
+  ]
+}

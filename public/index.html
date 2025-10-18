@@ -1,558 +1,673 @@
 <!doctype html>
 <html>
+
 <head>
-  <meta charset="utf-8"/>
+  <meta charset="utf-8" />
   <title>Game Over Gauge</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta property="og:title" content="Game Over Gauge – Market Crash Risk & Safe Yield Guide">
-  <meta property="og:description" content="A daily gauge of global market risk — see crash danger building before it hits your portfolio, and where to earn safe yield while you wait.">
-  <meta name="description" content="A daily gauge of global market risk — see crash danger building before it hits your portfolio, and where to earn safe yield while you wait.">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      --navy: #1a2a3a;
-      --dark-gray: #2d3e4f;
-      --medium-gray: #556b7b;
-      --light-gray: #8b9aaa;
-      --pale-gray: #e8eaed;
-      --off-white: #f5f6f7;
-      --accent: #1e5a96;
-      --border: #d0d5db;
+      --navy: #0f1419;
+      --accent: #00d4ff;
+      --success: #00ff88;
+      --danger: #ff3333;
+      --dark-bg: #0a0e12;
+      --card-bg: #131820;
+      --border: #1a2332;
     }
 
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
 
     body {
-      font-family: 'Georgia', 'Garamond', serif;
-      background: var(--off-white);
-      color: var(--navy);
-      line-height: 1.7;
+      font-family: 'Inter', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #0a0e12 0%, #1a1f2e 100%);
+      color: #e8e9eb;
+      line-height: 1.6;
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 60px 40px; }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 40px;
+    }
 
+    /* Header */
     header {
-      margin-bottom: 48px;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 32px;
+      margin-bottom: 80px;
+      position: relative;
+      z-index: 10;
     }
 
     h1 {
-      font-size: 42px;
-      font-weight: 700;
-      margin: 0 0 12px 0;
-      color: var(--navy);
-      letter-spacing: 0;
-      font-family: 'Georgia', serif;
+      font-size: 48px;
+      font-weight: 900;
+      margin: 0 0 8px 0;
+      color: white;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-
-    .header-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-
-    .header-left { flex: 1; min-width: 300px; }
-    .header-right { text-align: right; }
 
     .tagline {
       font-size: 14px;
-      color: var(--medium-gray);
+      color: #8b95a5;
       margin: 0;
-      font-weight: 400;
-      letter-spacing: 0.5px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
     }
 
-    .data-link { display: inline-flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .data-link {
+      display: inline-flex;
+      gap: 12px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
     .data-link a {
-      padding: 8px 14px;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 2px;
+      padding: 10px 18px;
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
       color: var(--accent);
       text-decoration: none;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      transition: all 0.2s ease;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-    }
-    .data-link a:hover { background: var(--accent); color: white; border-color: var(--accent); }
-
-    .section {
-      margin: 48px 0;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      padding: 32px 36px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      letter-spacing: 0.8px;
+      transition: all 0.3s ease;
+      cursor: pointer;
     }
 
-    .section h2 {
-      margin: 0 0 12px 0;
-      font-size: 26px;
-      font-family: 'Georgia', serif;
+    .data-link a:hover {
+      background: var(--accent);
       color: var(--navy);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
     }
 
-    .section h3 {
-      margin: 28px 0 12px;
-      font-size: 20px;
-      font-family: 'Georgia', serif;
-      color: var(--dark-gray);
+    /* Main Hero Hook */
+    .hero-hook {
+      position: relative;
+      margin-bottom: 60px;
+      overflow: hidden;
+      border-radius: 8px;
     }
 
-    .section p,
-    .section ul,
-    .section ol {
-      font-size: 15px;
-      color: var(--dark-gray);
-      margin: 0 0 16px 0;
-      font-family: 'Georgia', 'Garamond', serif;
+    .hero-hook::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+      filter: blur(80px);
+      animation: pulse-glow 6s ease-in-out infinite;
     }
 
-    .section ul,
-    .section ol {
-      padding-left: 22px;
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
     }
 
-    .muted-note {
-      color: var(--medium-gray);
-      font-size: 14px;
-      margin-top: -4px;
-      margin-bottom: 20px;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
+    .hero-hook::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      left: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+      filter: blur(80px);
+      animation: pulse-glow-reverse 6s ease-in-out infinite;
     }
 
-    .table-wrap {
-      overflow-x: auto;
-      margin: 20px 0;
+    @keyframes pulse-glow-reverse {
+
+      0%,
+      100% {
+        transform: scale(1.1);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1);
+        opacity: 1;
+      }
     }
 
-    table.market-map {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      font-size: 14px;
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      background: rgba(19, 24, 32, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 8px;
+      padding: 60px 48px;
+      text-align: center;
     }
 
-    table.market-map th,
-    table.market-map td {
-      border: 1px solid var(--border);
-      padding: 12px 14px;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    table.market-map th {
-      background: #f9fafb;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      font-weight: 700;
-      color: var(--dark-gray);
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 0.5px;
-    }
-
-    .badge {
+    .hero-badge {
       display: inline-block;
-      padding: 2px 8px;
-      font-size: 11px;
-      font-weight: 700;
+      background: rgba(0, 255, 136, 0.15);
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: 8px 16px;
       border-radius: 999px;
-      background: var(--off-white);
-      border: 1px solid var(--border);
-      color: var(--dark-gray);
-      margin-left: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+      animation: float 3s ease-in-out infinite;
     }
 
-    .note-block {
-      background: #f8fafc;
-      border-left: 3px solid var(--accent);
-      padding: 16px 20px;
-      margin: 24px 0 0 0;
-      font-size: 14px;
-      color: var(--dark-gray);
-      font-family: 'Helvetica Neue', Arial, sans-serif;
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
     }
 
-    .insight {
-      background: #111827;
+    .hero-main {
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin: 24px 0;
       color: white;
-      padding: 20px 24px;
-      border-radius: 2px;
-      font-size: 16px;
-      line-height: 1.7;
-      margin-top: 24px;
-      font-family: 'Georgia', serif;
+      letter-spacing: -1px;
     }
 
-    .insight strong {
-      display: block;
+    .hero-main .highlight {
+      background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+    }
+
+    .hero-sub {
       font-size: 18px;
+      color: #a8b5c4;
+      margin: 28px 0 0 0;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.8;
+    }
+
+    .hero-sub strong {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+
+    .cta-btn {
+      padding: 16px 32px;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .cta-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+      color: var(--navy);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+    }
+
+    .cta-primary:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 0 50px rgba(0, 212, 255, 0.6);
+    }
+
+    .cta-secondary {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .cta-secondary:hover {
+      background: rgba(0, 212, 255, 0.2);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+    }
+
+    /* Info Grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin: 40px 0;
+    }
+
+    .info-card {
+      background: rgba(19, 24, 32, 0.7);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 8px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s ease;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--accent) 0%, var(--success) 100%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .info-card:hover {
+      border-color: rgba(0, 212, 255, 0.4);
+      background: rgba(19, 24, 32, 0.9);
+      transform: translateY(-4px);
+    }
+
+    .info-card:hover::before {
+      opacity: 1;
+    }
+
+    .info-card-number {
+      font-size: 48px;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .info-card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      margin: 0 0 12px 0;
+    }
+
+    .info-card-text {
+      font-size: 14px;
+      color: #a8b5c4;
+      line-height: 1.7;
+    }
+
+    /* Urgency Section */
+    .urgency-section {
+      margin: 80px 0;
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .urgency-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 51, 51, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+      z-index: 1;
+    }
+
+    .urgency-content {
+      position: relative;
+      z-index: 2;
+      border: 2px solid rgba(255, 51, 51, 0.3);
+      border-radius: 8px;
+      padding: 48px;
+      text-align: center;
+      background: rgba(19, 24, 32, 0.9);
+      backdrop-filter: blur(10px);
+    }
+
+    .urgency-label {
+      display: inline-block;
+      background: rgba(255, 51, 51, 0.2);
+      border: 1px solid var(--danger);
+      color: #ff6666;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.8;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .urgency-headline {
+      font-size: 36px;
+      font-weight: 900;
+      color: white;
+      margin: 0 0 16px 0;
+      letter-spacing: -1px;
+    }
+
+    .urgency-subtext {
+      font-size: 16px;
+      color: #a8b5c4;
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .urgency-stat {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin-top: 40px;
+    }
+
+    .stat-box {
+      background: rgba(0, 212, 255, 0.05);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 4px;
+      padding: 24px;
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--accent);
       margin-bottom: 8px;
     }
 
-    .grid-two {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin: 16px 0;
+    .stat-label {
+      font-size: 12px;
+      color: #8b95a5;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
     }
 
-    .grid-card {
-      background: #f9fafb;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      padding: 18px 20px;
-      font-size: 14px;
-      color: var(--dark-gray);
-      font-family: 'Georgia', serif;
+    /* Dashboard iframe */
+    .dashboard-section {
+      margin: 0 0 60px 0;
+      position: relative;
+      z-index: 3;
+      background: rgba(19, 24, 32, 0.7);
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      padding: 40px;
+      overflow: visible;
+      box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+      order: -1;
     }
-
-    .grid-card strong {
-      display: block;
-      font-size: 16px;
-      margin-bottom: 6px;
-      color: var(--navy);
-    }
-
-    .hook {
-      background: white;
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--accent);
-      border-radius: 2px;
-      padding: 24px 28px;
-      margin-bottom: 40px;
-      font-size: 15px;
-      color: var(--dark-gray);
-      letter-spacing: 0;
-      line-height: 1.8;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    .hook strong { color: var(--navy); font-weight: 700; }
-    .hook .sub { display:block; margin-top:8px; color: var(--medium-gray); font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; }
-
-    .dashboard-section { margin-bottom: 40px; }
 
     iframe {
       width: 100%;
-      height: 900px;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      background: white;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      height: 680px;
+      border: none;
+      background: transparent;
+      display: block;
+      overflow: hidden;     /* Hide scrollbars */
     }
 
-    .footer-section {
-      margin-top: 40px;
-      padding-top: 32px;
-      border-top: 1px solid var(--border);
-      font-size: 12px;
-      color: var(--medium-gray);
+    /* Sections */
+    .section {
+      margin: 60px 0;
+      background: rgba(19, 24, 32, 0.7);
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      border-radius: 8px;
+      padding: 48px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .section h2 {
+      margin: 0 0 24px 0;
+      font-size: 32px;
+      color: white;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+
+    .section h2 .gradient {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section p {
+      font-size: 15px;
+      color: #a8b5c4;
+      margin: 0 0 16px 0;
       line-height: 1.8;
     }
 
-    .footer-note { margin: 0 0 12px 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
-    .disclaimer { font-size: 11px; color: var(--light-gray); font-style: italic; margin: 16px 0 0 0; line-height: 1.6; }
+    .footer-section {
+      margin-top: 80px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(0, 212, 255, 0.1);
+      font-size: 12px;
+      color: #6b7a8b;
+      line-height: 1.8;
+      text-align: center;
+    }
 
     @media (max-width: 768px) {
-      .wrap { padding: 40px 24px; }
-      h1 { font-size: 32px; }
-      .header-info { flex-direction: column; }
-      .header-right { text-align: left; }
-      .hook { font-size: 14px; padding: 20px 24px; }
-      iframe { height: 700px; }
-      .section { padding: 24px 24px; }
-      .section h2 { font-size: 24px; }
-      table.market-map th,
-      table.market-map td { font-size: 13px; }
+      .wrap {
+        padding: 40px 24px;
+      }
+
+      h1 {
+        font-size: 36px;
+      }
+
+      .hero-content {
+        padding: 40px 24px;
+      }
+
+      .hero-main {
+        font-size: 36px;
+      }
+
+      .hero-sub {
+        font-size: 16px;
+      }
+
+      .cta-group {
+        flex-direction: column;
+      }
+
+      .cta-btn {
+        width: 100%;
+      }
+
+      iframe {
+        height: 500px;
+      }
+
+      .section {
+        padding: 32px 24px;
+      }
+
+      .urgency-content {
+        padding: 32px 24px;
+      }
+
+      .urgency-headline {
+        font-size: 28px;
+      }
+
+      .hero-hook::before,
+      .hero-hook::after {
+        display: none;
+      }
     }
   </style>
-
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S6QMBBYHRN"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-S6QMBBYHRN');
-  </script>
 </head>
+
 <body>
   <div class="wrap">
     <header>
-      <div class="header-info">
-        <div class="header-left">
-          <h1>Game Over Gauge</h1>
-          <p class="tagline">Market Crash Risk & Safe Yield Guide</p>
-          <div class="data-link">
-            <a href="gauge.json">Data Export (JSON)</a>
-            <a href="yields.html">Safe Yield Scanner</a>
-          </div>
-        </div>
-        <div class="header-right">
-          <p class="tagline">For Professional & Serious Investors</p>
-        </div>
+      <h1>Game Over Gauge</h1>
+      <p class="tagline">Market Crash Risk & Safe Yield Guide</p>
+      <div class="data-link">
+        <a href="gauge.json">Data Export (JSON)</a>
+        <a href="yields.html">Safe Yield Scanner</a>
       </div>
     </header>
 
-    <div class="hook">
-      <strong>A daily gauge of global market risk — see crash danger building before it hits your portfolio.</strong>
-      <span class="sub">When risk rises, don’t sit idle: rotate to safe yield (tokenised U.S. Treasuries) and get paid while you wait.</span>
-    </div>
-
+    <!-- Dashboard -->
     <div class="dashboard-section">
-      <iframe src="dashboard.html" title="Game Over Gauge - Market Crash Risk"></iframe>
+      <iframe src="dashboard.html" title="Game Over Gauge - Market Crash Risk" scrolling="no"></iframe>
     </div>
 
-    <section class="section" id="section-1">
-      <h2>Section 1 – Market Map: Tokenised Treasury Platforms</h2>
-      <p><strong>Plain English. No hype. Real platforms. Real yields.</strong> These issuers wrap U.S. Treasury bills or money market funds as blockchain tokens and currently target ~4.8%–5.3% net annual yield. The table below compares the major players by access, chains, and how straightforward they are for a globally focused investor.</p>
-      <p class="muted-note">Criteria tracked: Yield, access profile, KYC requirements, underlying blockchain, and redemption liquidity.</p>
+    <!-- Hero Hook Section -->
+    <div class="hero-hook">
+      <div class="hero-content">
+        <div class="hero-badge">🚀 Institutional Money Quietly Moving</div>
 
-      <div class="table-wrap">
-        <table class="market-map" aria-describedby="section-1">
-          <thead>
-            <tr>
-              <th scope="col">Platform</th>
-              <th scope="col">Token / Product</th>
-              <th scope="col">Yield (Approx)</th>
-              <th scope="col">Access profile</th>
-              <th scope="col">KYC</th>
-              <th scope="col">Chain</th>
-              <th scope="col">Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Ondo Finance</td>
-              <td>OUSG (BlackRock T-Bills), USDY (Yield stablecoin)</td>
-              <td>5.0% – 5.2%</td>
-              <td>✅ Yes (retail accepted, but KYC)</td>
-              <td>✅</td>
-              <td>Ethereum, Solana, Layer2</td>
-              <td>Currently largest, &gt;$500M in AUM</td>
-            </tr>
-            <tr>
-              <td>Matrixdock (STBT)</td>
-              <td>Short-Term T-Bill Token (STBT)</td>
-              <td>~5.1%</td>
-              <td>⚠ High cap (typically $100K min)</td>
-              <td>✅</td>
-              <td>Ethereum</td>
-              <td>Professional/institutional leaning</td>
-            </tr>
-            <tr>
-              <td>Franklin Templeton (BUIDL)</td>
-              <td>BUIDL (Onchain Money Market Fund)</td>
-              <td>4.8% – 5.0%</td>
-              <td>❌ Institutional/Accredited Only</td>
-              <td>✅</td>
-              <td>Public chain (Stellar, Polygon)</td>
-              <td>Backed by Franklin Templeton</td>
-            </tr>
-            <tr>
-              <td>Backed Finance (BTF)</td>
-              <td>BTF (regulated T-Bill token)</td>
-              <td>~4.7%</td>
-              <td>⚠ Regional restrictions (professional tier)</td>
-              <td>✅</td>
-              <td>Ethereum</td>
-              <td>Swiss-regulated security token</td>
-            </tr>
-            <tr>
-              <td>OpenEden (TBILL)</td>
-              <td>TBILL Vault Token</td>
-              <td>5.0% – 5.3%</td>
-              <td>✅ Global (wallet whitelist)</td>
-              <td>✅</td>
-              <td>Ethereum</td>
-              <td>Rapidly growing within professional circles</td>
-            </tr>
-            <tr>
-              <td>Superstate (Coming)</td>
-              <td>US RWA bond fund</td>
-              <td>TBD</td>
-              <td>Not yet</td>
-              <td>TBD</td>
-              <td>TBD</td>
-              <td>Run by ex-Compound founder</td>
-            </tr>
-            <tr>
-              <td>Maple Finance (Cash Management)</td>
-              <td>Managed Treasury Pool</td>
-              <td>~5.2%</td>
-              <td>✅ Yes</td>
-              <td>✅</td>
-              <td>Ethereum</td>
-              <td>For DAOs &amp; crypto treasuries</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="hero-main">
+          When risk rises, <span class="highlight">don't sit idle</span>
+        </div>
 
-      <h3>🥇 Quick Rankings: Best Options Right Now</h3>
-      <div class="table-wrap">
-        <table class="market-map" aria-label="Quick rankings">
-          <thead>
-            <tr>
-              <th scope="col">Use Case</th>
-              <th scope="col">Best Platform</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Personal Yield (Easy Access)</td>
-              <td>Ondo USDY</td>
-            </tr>
-            <tr>
-              <td>Institutional Yield (Future Business Integration)</td>
-              <td>Ondo OUSG / Matrixdock</td>
-            </tr>
-            <tr>
-              <td>Emerging growth (Retail angle)</td>
-              <td>OpenEden TBILL</td>
-            </tr>
-            <tr>
-              <td>Potential Equity Bet</td>
-              <td>Superstate / Ondo (token/equity funding)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="hero-sub">
+          <strong>Rotate to tokenised U.S. Treasuries</strong> – the next frontier in on-chain yield.
+          <strong>Get paid real returns</strong> (4.8%–5.3% annually) while institutional investors quietly build
+          position.
+          This is not hype. This is capital flight to safety, happening on-chain, <strong>right now.</strong>
+        </div>
 
-      <div class="insight">
-        <strong>Strategic Insight</strong>
-        This isn’t DeFi hype — it’s TradFi yield moving on-chain. Whoever builds the clearest portal for ordinary investors becomes the Bloomberg of tokenised safety. Right now it’s confusing, scattered, and hidden behind KYC portals. That’s the opportunity.
+        <div class="cta-group">
+          <a href="yields.html" class="cta-btn cta-primary">See The Opportunity →</a>
+          <a href="#section-market-map" class="cta-btn cta-secondary">Learn More</a>
+        </div>
       </div>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-number">$2B+</div>
+        <div class="info-card-title">Capital On-Chain</div>
+        <div class="info-card-text">Tokenised Treasury assets growing exponentially across institutions and hedge funds
+          globally.</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-number">5.2%</div>
+        <div class="info-card-title">Average Yield</div>
+        <div class="info-card-text">Real, sustainable returns backed by U.S. Government bonds – no leverage, no risk.
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-number">24/7</div>
+        <div class="info-card-title">Market Access</div>
+        <div class="info-card-text">Unlike traditional bonds, mint and redeem anytime on blockchain rails. True
+          liquidity.</div>
+      </div>
+    </div>
+
+    <!-- Urgency Call -->
+    <div class="urgency-section">
+      <div class="urgency-bg"></div>
+      <div class="urgency-content">
+        <div class="urgency-label">⚠️ Market Rotation Underway</div>
+        <div class="urgency-headline">The Smart Money Already Knows</div>
+        <div class="urgency-subtext">
+          BlackRock, Franklin Templeton, and institutional treasuries have launched tokenised Treasury products.
+          Early movers are earning while they wait. Don't be left behind.
+        </div>
+        <div class="urgency-stat">
+          <div class="stat-box">
+            <div class="stat-number">50+</div>
+            <div class="stat-label">Major Platforms Live</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">7/24</div>
+            <div class="stat-label">Instant Redemptions</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">Billions</div>
+            <div class="stat-label">In AUM Growth</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1 -->
+    <section class="section" id="section-market-map">
+      <h2>Market Map: <span class="gradient">Tokenised Treasury Platforms</span></h2>
+      <p><strong>No hype. Real platforms. Real yields.</strong> These institutional-grade issuers wrap U.S. Treasury
+        bills as blockchain tokens targeting 4.8%–5.3% net annual yield.</p>
+      <p>Top tier: <strong>Ondo Finance</strong> (USDY, OUSG), <strong>OpenEden</strong> (TBILL),
+        <strong>Matrixdock</strong> (STBT), and <strong>Franklin Templeton</strong> (BUIDL).</p>
     </section>
 
-    <section class="section" id="section-2">
-      <h2>Section 2 – How You Can Personally Invest</h2>
-      <p><strong>Fastest safe path for an individual investor to earn on-chain Treasury yield:</strong></p>
-      <ol>
-        <li><strong>Start with Ondo USDY.</strong> Designed for globally whitelisted KYC’d holders; yields accrue automatically while you hold the token.</li>
-        <li><strong>Qualified and want deeper rails?</strong> Apply for Ondo OUSG. Instant mints/redemptions start at USD 5k; the non-instant windows require USD 100k mint / USD 50k redeem.</li>
-        <li><strong>Institutional-leaning options:</strong> Matrixdock STBT (accredited, higher mins) and OpenEden TBILL (USD 100k first deposit, then USD 1k+).</li>
-      </ol>
-
-      <h3>1) Wallet &amp; Custody</h3>
-      <ul>
-        <li>Ledger hardware wallet + MetaMask interface keeps keys offline.</li>
-        <li>Every issuer requires KYC and wallet whitelisting before minting.</li>
-      </ul>
-
-      <h3>2) Funding the Wallet</h3>
-      <ul>
-        <li>Convert local currency into USD via a trusted FX or brokerage channel.</li>
-        <li>Buy USDC on a reputable exchange, then withdraw to your whitelisted wallet.</li>
-        <li>Mint the token on the issuer portal once the wallet is approved.</li>
-      </ul>
-
-      <h3>3) Platform Expectations</h3>
-      <div class="grid-two">
-        <div class="grid-card">
-          <strong>Ondo USDY</strong>
-          KYC for globally whitelisted wallets. Ideal first loop for a USD 1k–25k test position.
-        </div>
-        <div class="grid-card">
-          <strong>Ondo OUSG</strong>
-          Qualified/accredited. Access to BlackRock BUIDL via Ondo rails.
-        </div>
-        <div class="grid-card">
-          <strong>Matrixdock STBT</strong>
-          Accredited investors only, professional onboarding, higher minimums.
-        </div>
-        <div class="grid-card">
-          <strong>OpenEden TBILL</strong>
-          Global KYC with USD 100k first deposit (then USD 1k+). Settles redemptions next business day.
-        </div>
-        <div class="grid-card">
-          <strong>Franklin BUIDL / Maple</strong>
-          Institutional rails; best accessed indirectly via Ondo or for DAO treasuries.
-        </div>
-      </div>
-
-      <h3>4) Practical First Allocation</h3>
-      <ul>
-        <li>Open Ondo USDY, pass KYC, whitelist your Ledger address.</li>
-        <li>Wire/convert to USDC, mint a test lot (e.g., USD 2k–10k), then redeem a slice to prove the loop.</li>
-        <li>If you qualify, add OUSG exposure and plan around instant/non-instant thresholds.</li>
-        <li>For larger tickets or a B2B angle, contact Matrixdock and OpenEden for onboarding timelines.</li>
-      </ul>
-
-      <h3>5) Safety Checklist</h3>
-      <ul>
-        <li>Use official issuer domains and keep wallets in cold storage.</li>
-        <li>Whitelist exchange withdrawal addresses before moving size.</li>
-        <li>Run a small redemption before scaling up.</li>
-        <li>Track how each product distributes yield (price accretion vs. rebase) for tax reporting.</li>
-      </ul>
-
-      <div class="note-block">
-        <strong>Tax note:</strong> Treat the yield as interest or other income in your jurisdiction. Keep monthly statements from issuers to streamline accounting.
-      </div>
+    <!-- Section 2 -->
+    <section class="section">
+      <h2>How to Get <span class="gradient">Started in 5 Minutes</span></h2>
+      <p><strong>Fastest safe path for personal investors:</strong></p>
+      <p>1. <strong>Get a Ledger wallet</strong> – keys offline, full control. 2. <strong>Convert to USDC</strong> via
+        any exchange. 3. <strong>KYC with Ondo USDY</strong> – globally accessible. 4. <strong>Mint tokens</strong> –
+        yield accrues instantly. 5. <strong>Redeem anytime</strong> – back to USDC in hours.</p>
+      <p style="margin-top: 24px;">Minimum: USD 1,000. Maximum: No cap. Transparency: Full on-chain visibility.</p>
     </section>
 
-    <section class="section" id="section-3">
-      <h2>Section 3 – Build the “Crash &amp; Yield Terminal” Brand</h2>
-      <p><strong>Positioning:</strong> “See crash risk. Move to safety. Earn real yield.” Fuse the Game Over Gauge (when to exit risk) with a Safe Yield Scanner (where to park capital).</p>
-
-      <h3>Core Modules</h3>
-      <ul>
-        <li><strong>Crash Indicator:</strong> The existing Game Over Gauge warning system.</li>
-        <li><strong>Safe Yield Scanner:</strong> Side-by-side comparisons of tokenised T-Bills.</li>
-        <li><strong>Allocator Guides:</strong> “I have $____ — show me the safest place now.”</li>
-        <li><strong>Alerts &amp; API:</strong> Email/Telegram notifications and JSON feeds for pros.</li>
-      </ul>
-
-      <h3>Platform Tiers</h3>
-      <div class="grid-two">
-        <div class="grid-card">
-          <strong>Free</strong>
-          Public site with crash gauge, daily mood, and educational explainers.
-        </div>
-        <div class="grid-card">
-          <strong>Pro</strong>
-          $10–$30/mo alerts, allocation playbooks, CSV/JSON export.
-        </div>
-        <div class="grid-card">
-          <strong>Enterprise/API</strong>
-          Feeds for funds, DAOs, wealth platforms, and fintech partners.
-        </div>
-      </div>
-
-      <h3>Moat vs. Competitors</h3>
-      <ul>
-        <li><strong>Financial Media:</strong> they report news; you deliver actionable positioning.</li>
-        <li><strong>DeFi Platforms:</strong> they hype tech; you provide calm clarity and safety.</li>
-        <li><strong>Yield Protocols:</strong> they sell product; you own the narrative and aggregation layer.</li>
-      </ul>
-
-      <h3>Execution Roadmap</h3>
-      <ol>
-        <li><strong>Phase 1 – Core Website:</strong> Ship gauge + Safe Yield Scanner + actionable insights.</li>
-        <li><strong>Phase 2 – User Tools:</strong> Allocation slider, stablecoin comparisons, tax guidance.</li>
-        <li><strong>Phase 3 – Pro Services:</strong> Alerts, treasury allocation models, onboarding guides.</li>
-        <li><strong>Phase 4 – Partnerships:</strong> Rev-share funnels with Ondo/OpenEden, white-label options.</li>
-      </ol>
-
-      <div class="note-block">
-        <strong>Brand tone:</strong> No Wall Street jargon. No crypto hype. Blunt, calm, factual: “Markets break. Stay paid while you wait.”
-      </div>
-    </section>
-
+    <!-- Footer -->
     <div class="footer-section">
-      <p class="footer-note"><strong>Update Frequency:</strong> Daily close</p>
-      <p class="footer-note"><strong>Data Source:</strong> See <a href="gauge.json">gauge.json</a> for the latest build metadata and components.</p>
-      <p class="disclaimer">This tool provides quantitative market analysis based on historical data and current indicators. It is not financial advice. Past performance does not guarantee future results. Consult a licensed advisor before making investment decisions.</p>
+      <p><strong>Update Frequency:</strong> Daily close | <strong>Data Source:</strong> Real-time institutional feeds
+      </p>
+      <p style="margin-top: 16px; font-size: 11px; color: #556b7b; font-style: italic;">
+        This tool provides quantitative market analysis. Not financial advice. Consult a licensed advisor before
+        investing.
+        Past performance does not guarantee future results.
+      </p>
     </div>
   </div>
 </body>
+
 </html>

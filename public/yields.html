@@ -9,82 +9,215 @@
   <meta name="description" content="Compare tokenised U.S. Treasury options in plain English. Who can access them, typical minimums, and how to start.">
   <style>
     :root {
-      --navy: #1a2a3a;
-      --dark-gray: #2d3e4f;
-      --medium-gray: #556b7b;
-      --light-gray: #8b9aaa;
-      --pale-gray: #e8eaed;
-      --off-white: #f5f6f7;
-      --accent: #1e5a96;
-      --border: #d0d5db;
-      --card-bg: #ffffff;
+      --navy: #0f1419;
+      --dark-bg: #0a0e12;
+      --card-bg: #131820;
+      --accent: #00d4ff;
+      --success: #00ff88;
+      --warning: #fbbf24;
+      --danger: #ff6b6b;
+      --border: #1a2332;
+      --text-primary: #e8e9eb;
+      --text-secondary: #a8b5c4;
+      --text-muted: #6b7a8b;
     }
+
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
+
     body {
-      font-family: 'Georgia', 'Garamond', serif;
-      background: var(--off-white);
-      color: var(--navy);
+      font-family: 'Inter', 'Helvetica Neue', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: linear-gradient(135deg, #0a0e12 0%, #1a1f2e 100%);
+      color: var(--text-primary);
       line-height: 1.7;
       min-height: 100vh;
     }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 60px 40px; }
-    header { margin-bottom: 32px; }
-    h1 { font-size: 36px; margin: 0 0 8px; }
-    p.muted { color: var(--medium-gray); margin: 0 0 20px; }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+
+    .wrap { 
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 40px;
+    }
+
+    header { 
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    h1 { 
+      font-size: 42px;
+      font-weight: 900;
+      margin: 0 0 12px 0;
+      color: var(--text-primary);
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    p.muted { 
+      color: var(--text-secondary);
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    a { 
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    a:hover { 
+      color: var(--success);
+      text-decoration: underline;
+    }
 
     .table {
       width: 100%;
       border-collapse: collapse;
-      background: var(--card-bg);
+      background: rgba(19, 24, 32, 0.7);
       border: 1px solid var(--border);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
     }
+
     .table th, .table td {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--pale-gray);
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
       text-align: left;
-      font-size: 15px;
+      font-size: 14px;
       vertical-align: top;
     }
+
     .table th {
-      background: #f9fafb;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: rgba(0, 212, 255, 0.1);
       font-weight: 700;
-      color: var(--dark-gray);
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 12px;
     }
+
+    .table td {
+      color: var(--text-secondary);
+    }
+
+    .table tbody tr {
+      transition: all 0.3s ease;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table tbody tr:hover {
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .table td strong {
+      color: var(--text-primary);
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+
     .badge {
       display: inline-block;
-      padding: 2px 8px;
-      font-size: 12px;
+      padding: 4px 10px;
+      font-size: 11px;
       font-weight: 700;
-      border: 1px solid var(--border);
       border-radius: 999px;
-      background: #fff;
-      color: var(--dark-gray);
+      background: rgba(0, 212, 255, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-left: 8px;
+      vertical-align: middle;
     }
+
+    .badge.retail {
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--success);
+      border-color: rgba(0, 255, 136, 0.3);
+    }
+
+    .badge.qualified {
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--warning);
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+
+    .badge.pro {
+      background: rgba(0, 212, 255, 0.15);
+      color: var(--accent);
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .badge.accredited {
+      background: rgba(255, 107, 107, 0.15);
+      color: var(--danger);
+      border-color: rgba(255, 107, 107, 0.3);
+    }
+
     .foot {
-      font-size: 12px;
-      color: var(--light-gray);
-      margin-top: 16px;
-      line-height: 1.6;
-      font-style: italic;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 24px;
+      line-height: 1.7;
+      padding: 20px;
+      background: rgba(0, 212, 255, 0.05);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
     }
-    .back { margin-top: 24px; font-size: 14px; }
+
+    .back { 
+      margin-top: 40px;
+      font-size: 14px;
+    }
+
+    .back a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .back a:hover {
+      background: var(--accent);
+      color: var(--navy);
+      text-decoration: none;
+    }
+
     @media (max-width: 768px) {
       .wrap { padding: 40px 24px; }
-      h1 { font-size: 28px; }
-      .table th, .table td { font-size: 14px; }
+      h1 { font-size: 32px; }
+      header { margin-bottom: 32px; }
+      .table th, .table td { 
+        font-size: 13px;
+        padding: 12px 14px;
+      }
+      .badge { font-size: 10px; padding: 3px 8px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Safe Yield Scanner</h1>
-      <p class="muted">Tokenised U.S. Treasuries in plain English — who can access them, typical minimums, and where to start.</p>
+      <h1>Safe Yield <span style="background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Scanner</span></h1>
+      <p class="muted">Tokenised U.S. Treasuries in plain English – who can access them, typical minimums, real yields, and where to start.</p>
     </header>
 
     <table class="table" aria-label="Tokenised Treasury comparison">
@@ -96,70 +229,195 @@
           <th>KYC</th>
           <th>Chain</th>
           <th>Typical Min</th>
-          <th>Docs</th>
+          <th>Yield</th>
+          <th>Learn More</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="yield-rows">
+        <!-- Fallback static rows (replaced if yields.json loads) -->
         <tr>
-          <td><strong>Ondo</strong></td>
-          <td>USDY <span class="badge">Retail</span></td>
+          <td><strong>Ondo Finance</strong></td>
+          <td>USDY <span class="badge retail">Retail</span></td>
           <td>Global investors (KYC + whitelist)</td>
-          <td>Yes</td>
-          <td>Multi-chain</td>
-          <td>Low</td>
-          <td><a href="https://docs.ondo.finance/general-access-products/usdy/faq/eligibility" rel="noopener">Learn more</a></td>
+          <td>✓ Yes</td>
+          <td>Ethereum, Solana, L2</td>
+          <td>Low (from $1k)</td>
+          <td><strong>5.0%–5.2%</strong></td>
+          <td><a href="https://docs.ondo.finance/general-access-products/usdy/faq/eligibility" rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
-          <td><strong>Ondo</strong></td>
-          <td>OUSG <span class="badge">Qualified</span></td>
+          <td><strong>Ondo Finance</strong></td>
+          <td>OUSG <span class="badge qualified">Qualified</span></td>
           <td>Qualified/accredited</td>
-          <td>Yes</td>
-          <td>Ethereum/L2</td>
-          <td>USD 5k instant; USD 100k non-instant</td>
-          <td><a href="https://docs.ondo.finance/qualified-access-products/ousg/instant-limits" rel="noopener">Learn more</a></td>
+          <td>✓ Yes</td>
+          <td>Ethereum, L2</td>
+          <td>$5k instant; $100k non-instant</td>
+          <td><strong>5.0%–5.2%</strong></td>
+          <td><a href="https://docs.ondo.finance/qualified-access-products/ousg/instant-limits" rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>OpenEden</strong></td>
-          <td>TBILL <span class="badge">Pro</span></td>
+          <td>TBILL <span class="badge pro">Pro</span></td>
           <td>Global (KYC + whitelist)</td>
-          <td>Yes</td>
+          <td>✓ Yes</td>
           <td>Ethereum</td>
-          <td>USD 100k first; USD 1k+</td>
-          <td><a href="https://docs.openeden.com/tbill/faq" rel="noopener">Learn more</a></td>
+          <td>$100k first; $1k+</td>
+          <td><strong>5.0%–5.3%</strong></td>
+          <td><a href="https://docs.openeden.com/tbill/faq" rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>Matrixdock</strong></td>
-          <td>STBT <span class="badge">Accredited</span></td>
+          <td>STBT <span class="badge accredited">Accredited</span></td>
           <td>Accredited investors</td>
-          <td>Yes</td>
+          <td>✓ Yes</td>
           <td>Ethereum</td>
-          <td>High (pro-tier)</td>
-          <td><a href="https://forum.arbitrum.foundation/t/matrixdock-stbt-step-application/23584" rel="noopener">Learn more</a></td>
+          <td>Professional tier (high)</td>
+          <td><strong>~5.1%</strong></td>
+          <td><a href="https://matrixdock.com" rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>Franklin Templeton</strong></td>
-          <td>BUIDL / FOBXX</td>
-          <td>Institutional/accredited</td>
-          <td>Yes</td>
-          <td>Public chain</td>
-          <td>Institutional</td>
-          <td><a href="https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX" rel="noopener">Learn more</a></td>
+          <td>BUIDL <span class="badge accredited">Institutional</span></td>
+          <td>Institutional/accredited only</td>
+          <td>✓ Yes</td>
+          <td>Stellar, Polygon</td>
+          <td>Institutional minimum</td>
+          <td><strong>4.8%–5.0%</strong></td>
+          <td><a href="https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX" rel="noopener noreferrer">Docs →</a></td>
         </tr>
         <tr>
           <td><strong>Maple Finance</strong></td>
-          <td>Cash Management</td>
-          <td>DAOs/funds; accredited</td>
-          <td>Yes</td>
+          <td>Cash Management <span class="badge pro">DAOs</span></td>
+          <td>DAOs, funds, accredited</td>
+          <td>✓ Yes</td>
           <td>Ethereum</td>
-          <td>Varies</td>
-          <td><a href="https://maple.finance/insights/maple-cash-management-opens-to-us-investors" rel="noopener">Learn more</a></td>
+          <td>Varies by product</td>
+          <td><strong>~5.2%</strong></td>
+          <td><a href="https://maple.finance/insights/maple-cash-management-opens-to-us-investors" rel="noopener noreferrer">Docs →</a></td>
+        </tr>
+        <tr>
+          <td><strong>Superstate</strong></td>
+          <td>US RWA Bond Fund <span class="badge pro">Coming</span></td>
+          <td>TBD (ex-Compound founder)</td>
+          <td>TBD</td>
+          <td>TBD</td>
+          <td>TBD</td>
+          <td><strong>TBD</strong></td>
+          <td><a href="https://superstate.co" rel="noopener noreferrer">Docs →</a></td>
         </tr>
       </tbody>
     </table>
 
-    <p class="foot">Data points are sourced from official issuer docs linked above and may change. Always confirm details during KYC.</p>
+    <p class="foot">
+      <strong>Key takeaway:</strong> Start with Ondo USDY for retail access. Yields are real, backed by U.S. Treasuries, and paid daily. Always confirm current terms during KYC – rates and minimums change.
+    </p>
 
-    <div class="back"><a href="index.html" aria-label="Back to gauge">← Back to Game Over Gauge</a></div>
+    <div class="back">
+      <a href="index.html" aria-label="Back to gauge">← Back to Game Over Gauge</a>
+    </div>
   </div>
+
+  <script>
+    (function() {
+      const tbody = document.getElementById('yield-rows');
+      if (!tbody) return;
+
+      function fmtUSD(n) {
+        if (typeof n !== 'number' || isNaN(n)) return 'TBD';
+        if (n >= 1000) return '$' + (n/1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
+        return '$' + n.toString();
+      }
+
+      function fmtYieldFromBps(bps) {
+        if (typeof bps !== 'number' || isNaN(bps)) return null;
+        return (bps / 100).toFixed(2) + '%';
+      }
+
+      function badgeClassFor(access) {
+        const a = (access || '').toLowerCase();
+        if (a.includes('retail')) return 'retail';
+        if (a.includes('qualified')) return 'qualified';
+        if (a.includes('accredited') || a.includes('institutional')) return 'accredited';
+        if (a.includes('pro') || a.includes('dao') || a.includes('professional')) return 'pro';
+        return 'pro';
+      }
+
+      function productBadgeLabel(access) {
+        const a = (access || '').toLowerCase();
+        if (a.includes('retail')) return 'Retail';
+        if (a.includes('qualified')) return 'Qualified';
+        if (a.includes('accredited')) return 'Accredited';
+        if (a.includes('institutional')) return 'Institutional';
+        if (a.includes('pro') || a.includes('professional') || a.includes('dao')) return 'Pro';
+        return 'Pro';
+      }
+
+      function typicalMinText(item) {
+        const first = item.min_initial_usd;
+        const sub = item.min_subsequent_usd;
+        const inst = item.min_instant_usd;
+        const nonInst = item.min_non_instant_mint_usd;
+
+        if (inst && nonInst) return fmtUSD(inst) + ' instant; ' + fmtUSD(nonInst) + ' non-instant';
+        if (first && sub) return fmtUSD(first) + ' first; ' + fmtUSD(sub) + '+';
+        if (first) return fmtUSD(first);
+        return 'Varies';
+      }
+
+      function chainsText(chain) {
+        if (Array.isArray(chain)) return chain.join(', ');
+        if (typeof chain === 'string') return chain;
+        return '—';
+      }
+
+      // Progressive enhancement: replace static rows if yields.json is available
+      fetch('yields.json', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data || !Array.isArray(data.issuers)) return;
+
+          const rows = data.issuers.map(item => {
+            const issuer = (item.name || '').trim();
+            const product = (item.product || '').trim();
+            const access = (item.access || '').trim();
+            const kyc = item.kyc_required ? '✓ Yes' : '—';
+            const chain = chainsText(item.chain);
+            const docs = (item.docs || '#').trim();
+
+            const badgeClass = badgeClassFor(access);
+            const badgeLabel = productBadgeLabel(access);
+
+            // yield
+            const y = typeof item.apr_bps === 'number' ? fmtYieldFromBps(item.apr_bps) : null;
+            const yieldCell = y ? ('<strong>' + y + '</strong>') : '<strong>TBD</strong>';
+
+            // mins
+            const minTxt = typicalMinText(item);
+
+            // issuer display name tweaks
+            const issuerDisplay = issuer === 'Ondo' ? 'Ondo Finance' : issuer;
+
+            return `
+              <tr>
+                <td><strong>${issuerDisplay || '—'}</strong></td>
+                <td>${product || '—'} <span class="badge ${badgeClass}">${badgeLabel}</span></td>
+                <td>${access || '—'}</td>
+                <td>${kyc}</td>
+                <td>${chain}</td>
+                <td>${minTxt}</td>
+                <td>${yieldCell}</td>
+                <td><a href="${docs}" rel="noopener noreferrer">Docs →</a></td>
+              </tr>
+            `;
+          });
+
+          // Replace table body
+          tbody.innerHTML = rows.join('');
+        })
+        .catch(() => {
+          // Keep static rows if anything fails
+        });
+    })();
+  </script>
 </body>
 </html>

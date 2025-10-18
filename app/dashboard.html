@@ -3,37 +3,210 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Game Over Gauge</title>
+  <title>Game Over Gauge Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
-    :root { --needle-deg: -35.31450909090909deg; }
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; margin: 20px; color:#111; }
-    .wrap { max-width: 1180px; margin: 0 auto; }
-    .top { display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; }
-    .panel { flex:1 1 360px; }
+    :root { 
+      --needle-deg: -32.3636deg;
+      --navy: #0f1419;
+      --dark-bg: #0a0e12;
+      --card-bg: #131820;
+      --accent: #00d4ff;
+      --success: #00ff88;
+      --border: #1a2332;
+    }
 
-    .gbox { position:relative; width: 560px; max-width: 100%; }
-    .gtitle { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-    svg { display:block; width:100%; height:auto; }
+    * { box-sizing: border-box; }
 
-    .needle { transform-origin: 280px 240px; transform: rotate(var(--needle-deg)); }
-    .hub { fill:#111; }
-    .band-stroke { stroke:#ffffff; stroke-width:2; }
+    body { 
+      font-family: 'Inter', 'Helvetica Neue', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      padding: 0;
+      color: #e8e9eb;
+      background: transparent;
+    }
 
-    .tick text { font-size: 11px; fill:#444; }
-    .bandlbl { font-size: 12px; fill:#111; opacity:.95; }
+    .wrap { 
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0;
+    }
 
-    .score { font-size: 36px; font-weight: 800; line-height:1; }
-    .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; margin-left:8px; }
-    .muted { color:#555; font-size:12px; }
-    .explain { margin-top:10px; font-size:14px; line-height:1.5; white-space:pre-wrap; }
-    .source { margin-top:6px; font-size:12px; color:#6b7280; }
+    .top { 
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
 
-    table { border-collapse: collapse; width: 100%; margin-top: 18px; }
-    th, td { border:1px solid #e5e7eb; padding:8px; font-size: 14px; }
-    th { background:#f7f7f7; text-align:left; }
-    .meta { color:#555; font-size: 12px; margin-top:8px; }
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .panel { 
+      flex: 1 1 360px;
+    }
+
+    .gbox { 
+      position: relative;
+      width: 560px;
+      max-width: 100%;
+    }
+
+    .gtitle { 
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+
+    svg { 
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .needle { 
+      transform-origin: 280px 240px;
+      transform: rotate(var(--needle-deg));
+    }
+
+    .hub { 
+      fill: #00d4ff;
+    }
+
+    .band-stroke { 
+      stroke: #1a2332;
+      stroke-width: 2;
+    }
+
+    .tick text { 
+      font-size: 11px;
+      fill: #8b95a5;
+    }
+
+    .bandlbl { 
+      font-size: 12px;
+      fill: #e8e9eb;
+      opacity: 0.9;
+      font-weight: 600;
+    }
+
+    .score { 
+      font-size: 48px;
+      font-weight: 900;
+      line-height: 1;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .badge { 
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-left: 12px;
+      vertical-align: middle;
+    }
+
+    .badge.cautious { background: var(--success); }
+    .badge.risky { background: #fbbf24; }
+    .badge.crash { background: #ff6b6b; }
+
+    .muted { 
+      color: #8b95a5;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .explain { 
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #a8b5c4;
+    }
+
+    .source { 
+      margin-top: 12px;
+      font-size: 12px;
+      color: #6b7a8b;
+    }
+
+    .source strong { color: var(--accent); }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 900;
+      margin: 40px 0 24px 0;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    table { 
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background: rgba(19, 24, 32, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    th, td { 
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    th { 
+      background: rgba(0, 212, 255, 0.1);
+      text-align: left;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    td { color: #a8b5c4; }
+
+    tr:hover { background: rgba(0, 212, 255, 0.05); }
+
+    tr td:first-child {
+      font-weight: 600;
+      color: #e8e9eb;
+    }
+
+    .meta { 
+      color: #6b7a8b;
+      font-size: 12px;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    .sr-only { 
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 768px) {
+      .top { flex-direction: column; }
+      .gbox { width: 100%; }
+      .score { font-size: 36px; }
+      h2 { font-size: 20px; }
+      table { font-size: 13px; }
+      th, td { padding: 10px 12px; }
+    }
   </style>
 </head>
 <body>
@@ -42,7 +215,7 @@
     <div class="top" role="group" aria-labelledby="gauge-title">
       <div class="gbox">
         <svg viewBox="0 0 560 280" role="img" aria-labelledby="gauge-title">
-          <title id="gauge-title">Gauge at 30.4 percent</title>
+          <title id="gauge-title">Gauge at 32.0 percent</title>
 
           <defs>
             
@@ -110,62 +283,68 @@
           
 
           <g class="needle">
-            <line x1="280" y1="240" x2="280" y2="60" stroke="#111" stroke-width="3"/>
-            <circle class="hub" cx="280" cy="240" r="7"/>
-            <circle cx="280" cy="240" r="11" fill="none" stroke="#fff" stroke-width="3"/>
+            <line x1="280" y1="240" x2="280" y2="60" stroke="#00d4ff" stroke-width="4"/>
+            <circle class="hub" cx="280" cy="240" r="8"/>
+            <circle cx="280" cy="240" r="13" fill="none" stroke="#00d4ff" stroke-width="2" opacity="0.5"/>
           </g>
         </svg>
 
-        <div class="sr-only" aria-live="polite">Gauge pointer at 30.4 percent.</div>
+        <div class="sr-only" aria-live="polite">Gauge pointer at 32.0 percent.</div>
       </div>
 
       <div class="panel">
         <div class="score">
-          30.4%
-          <span class="badge" style="background: #84cc16">Cautious</span>
+          32.0%
+          <span class="badge cautious">Cautious</span>
         </div>
-        <div class="muted">As of 2025-10-17 07:19:11 (UTC). Trend penalty applied: 0.0 pts.</div>
-        <div class="explain">The market is in a cautious state, with a gauge score of 30.4%. This is primarily due to low-risk corporate bonds and a still-elevated fear index, though longer-term interest rates are relatively stable. Investors should consider maintaining a diversified portfolio and ensuring adequate liquidity in this environment.</div>
+        <div class="muted">As of 2025-10-18 09:06:03 (UTC). Trend penalty applied: 0.0 pts.</div>
+        <div class="explain">Markets are in a cautious mood, with high yield credit risk flashing a warning sign. This is balanced by a slight drop in Treasury yields and a moderate level of investor fear. For now, it's a time to be selective and ensure your portfolio is well-diversified.</div>
         <div class="source">explanation_source: <strong>deepseek-sdk</strong></div>
       </div>
     </div>
 
-    <h2>Components</h2>
+    <h2>Risk Components Breakdown</h2>
     <table>
       <thead>
-        <tr><th>Indicator</th><th>Latest</th><th>5D Δ</th><th>Score (0–100)</th><th>Weight</th></tr>
+        <tr>
+          <th>Indicator</th>
+          <th>Latest</th>
+          <th>5D Δ</th>
+          <th>Score (0–100)</th>
+          <th>Weight</th>
+        </tr>
       </thead>
       <tbody>
       
         <tr>
           <td>US 10Y Nominal (DGS10, %)</td>
-          <td>4.05%</td>
-          <td>0.00%</td>
-          <td>34.4</td>
+          <td>3.99%</td>
+          <td>-0.06%</td>
+          <td>33.1</td>
           <td>20.0%</td>
         </tr>
       
         <tr>
           <td>US 10Y Real (DFII10, %)</td>
-          <td>1.76%</td>
-          <td>0.01%</td>
-          <td>58.7</td>
+          <td>1.71%</td>
+          <td>-0.04%</td>
+          <td>57.0</td>
           <td>25.0%</td>
         </tr>
       
         <tr>
           <td>High Yield OAS (%, BofA ICE)</td>
-          <td>2.95%</td>
-          <td>-0.23%</td>
-          <td>0.0</td>
+          <td>3.04%</td>
+          <td>-0.14%</td>
+          <td>0.7</td>
           <td>30.0%</td>
         </tr>
       
         <tr>
           <td>VIX (index)</td>
-          <td>20.6</td>
-          <td>-1.0</td>
-          <td>26.2</td>
+          <td>25.3</td>
+          <td>3.6</td>
+          <td>40.3</td>
           <td>15.0%</td>
         </tr>
       
