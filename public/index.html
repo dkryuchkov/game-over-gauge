@@ -8,11 +8,10 @@
     window.dataLayer = window.dataLayer || [];
     function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
-
     gtag('config', 'G-S6QMBBYHRN');
   </script>
   <meta charset="utf-8" />
-  <title>Game Over Gauge</title>
+  <title>Game Over Gauge | Market Crash Risk & Safe Yield</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -106,7 +105,7 @@
       box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
     }
 
-    /* Main Hero Hook */
+    /* Hero Hook */
     .hero-hook {
       position: relative;
       margin-bottom: 60px;
@@ -127,17 +126,8 @@
     }
 
     @keyframes pulse-glow {
-
-      0%,
-      100% {
-        transform: scale(1);
-        opacity: 0.8;
-      }
-
-      50% {
-        transform: scale(1.1);
-        opacity: 1;
-      }
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; }
     }
 
     .hero-hook::after {
@@ -153,17 +143,8 @@
     }
 
     @keyframes pulse-glow-reverse {
-
-      0%,
-      100% {
-        transform: scale(1.1);
-        opacity: 0.8;
-      }
-
-      50% {
-        transform: scale(1);
-        opacity: 1;
-      }
+      0%, 100% { transform: scale(1.1); opacity: 0.8; }
+      50% { transform: scale(1); opacity: 1; }
     }
 
     .hero-content {
@@ -193,15 +174,8 @@
     }
 
     @keyframes float {
-
-      0%,
-      100% {
-        transform: translateY(0px);
-      }
-
-      50% {
-        transform: translateY(-8px);
-      }
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
     }
 
     .hero-main {
@@ -385,15 +359,8 @@
     }
 
     @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 0.8;
-      }
-
-      50% {
-        opacity: 1;
-      }
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
     }
 
     .urgency-headline {
@@ -452,7 +419,6 @@
       padding: 40px;
       overflow: visible;
       box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
-      order: -1;
     }
 
     iframe {
@@ -461,256 +427,6 @@
       border: none;
       background: transparent;
       display: block;
-    }
-
-    /* Sections */
-    .section {
-      margin: 60px 0;
-      background: rgba(19, 24, 32, 0.7);
-      border: 1px solid rgba(0, 212, 255, 0.1);
-      border-radius: 8px;
-      padding: 48px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .section h2 {
-      margin: 0 0 24px 0;
-      font-size: 32px;
-      color: white;
-      font-weight: 900;
-      letter-spacing: -1px;
-    }
-
-    .section h2 .gradient {
-      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .section>p {
-      font-size: 15px;
-      color: #a8b5c4;
-      margin: 0 0 16px 0;
-      line-height: 1.8;
-    }
-
-    /* Platform Grid */
-    .platform-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      margin-top: 32px;
-    }
-
-    .platform-card {
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(0, 255, 136, 0.05) 100%);
-      border: 1px solid rgba(0, 212, 255, 0.2);
-      border-radius: 8px;
-      padding: 24px;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .platform-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
-      transition: left 0.5s ease;
-    }
-
-    .platform-card:hover {
-      border-color: rgba(0, 212, 255, 0.4);
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.12) 0%, rgba(0, 255, 136, 0.08) 100%);
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 212, 255, 0.15);
-    }
-
-    .platform-card:hover::before {
-      left: 100%;
-    }
-
-    .platform-name {
-      font-size: 18px;
-      font-weight: 700;
-      color: white;
-      margin: 0 0 12px 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .platform-tokens {
-      font-size: 13px;
-      color: var(--success);
-      font-weight: 600;
-      margin-bottom: 8px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .platform-desc {
-      font-size: 13px;
-      color: #8b95a5;
-      line-height: 1.6;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Steps */
-    .steps-container {
-      margin-top: 40px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 24px;
-    }
-
-    .step {
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(0, 255, 136, 0.05) 100%);
-      border-left: 4px solid var(--accent);
-      border-radius: 8px;
-      padding: 28px;
-      position: relative;
-      transition: all 0.3s ease;
-    }
-
-    .step:nth-child(2) {
-      border-left-color: #00e5ff;
-    }
-
-    .step:nth-child(3) {
-      border-left-color: var(--success);
-    }
-
-    .step:nth-child(4) {
-      border-left-color: #00ff88;
-    }
-
-    .step:nth-child(5) {
-      border-left-color: var(--accent);
-    }
-
-    .step:nth-child(6) {
-      border-left-color: #ff9933;
-    }
-
-    .step:nth-child(7) {
-      border-left-color: #cc99ff;
-    }
-
-    .step:hover {
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.12) 0%, rgba(0, 255, 136, 0.08) 100%);
-      transform: translateX(8px);
-      box-shadow: 0 8px 24px rgba(0, 212, 255, 0.12);
-    }
-
-    .step-number {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
-      color: var(--navy);
-      border-radius: 50%;
-      font-weight: 900;
-      font-size: 18px;
-      margin-bottom: 12px;
-      flex-shrink: 0;
-    }
-
-    .step:nth-child(6) .step-number,
-    .step:nth-child(7) .step-number {
-      background: linear-gradient(135deg, #ff9933 0%, #ffaa55 100%);
-    }
-
-    .step-number.alert {
-      background: linear-gradient(135deg, #ff9933 0%, #ffaa55 100%);
-      font-size: 20px;
-    }
-
-    .step-number.question {
-      background: linear-gradient(135deg, #cc99ff 0%, #dd99ff 100%);
-      font-size: 20px;
-    }
-
-    .step-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: white;
-      margin: 0 0 12px 0;
-    }
-
-    .step-desc {
-      font-size: 14px;
-      color: #a8b5c4;
-      line-height: 1.7;
-      margin: 0 0 8px 0;
-    }
-
-    .step-desc strong {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .step-desc em {
-      color: #00ff88;
-      font-style: italic;
-    }
-
-    .step-desc ol,
-    .step-desc ul {
-      margin: 12px 0 0 20px;
-      padding: 0;
-    }
-
-    .step-desc li {
-      margin-bottom: 8px;
-      line-height: 1.6;
-    }
-
-    .step-desc li:last-child {
-      margin-bottom: 0;
-    }
-
-    /* Specs Bar */
-    .specs-bar {
-      background: rgba(0, 212, 255, 0.05);
-      border: 1px solid rgba(0, 212, 255, 0.1);
-      border-radius: 8px;
-      padding: 24px;
-      margin-top: 32px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 24px;
-      text-align: center;
-    }
-
-    .spec-item {
-      border-right: 1px solid rgba(0, 212, 255, 0.15);
-    }
-
-    .spec-item:last-child {
-      border-right: none;
-    }
-
-    .spec-label {
-      font-size: 12px;
-      color: #8b95a5;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .spec-value {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--accent);
     }
 
     .footer-section {
@@ -756,10 +472,6 @@
         height: 500px;
       }
 
-      .section {
-        padding: 32px 24px;
-      }
-
       .urgency-content {
         padding: 32px 24px;
       }
@@ -772,29 +484,6 @@
       .hero-hook::after {
         display: none;
       }
-
-      .platform-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .specs-bar {
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-
-      .spec-item {
-        border-right: none;
-        border-bottom: 1px solid rgba(0, 212, 255, 0.15);
-        padding-bottom: 16px;
-      }
-
-      .spec-item:last-child {
-        border-bottom: none;
-      }
-
-      .section h2 {
-        font-size: 28px;
-      }
     }
   </style>
 </head>
@@ -806,13 +495,15 @@
       <p class="tagline">Market Crash Risk & Safe Yield Guide</p>
       <div class="data-link">
         <a href="#data-export">Data Export (JSON)</a>
-        <a href="#yields">Safe Yield Scanner</a>
+        <a href="learn.html">Learn More</a>
       </div>
     </header>
+
     <!-- Dashboard -->
     <div class="dashboard-section">
       <iframe src="dashboard.html" title="Game Over Gauge - Market Crash Risk" scrolling="no"></iframe>
     </div>
+
     <!-- Hero Hook Section -->
     <div class="hero-hook">
       <div class="hero-content">
@@ -829,10 +520,11 @@
         </div>
         <div class="cta-group">
           <a href="yields.html" class="cta-btn cta-primary">See The Opportunity →</a>
-          <a href="#getting-started" class="cta-btn cta-secondary">Learn More</a>
+          <a href="learn.html" class="cta-btn cta-secondary">Learn More</a>
         </div>
       </div>
     </div>
+
     <!-- Info Grid -->
     <div class="info-grid">
       <div class="info-card">
@@ -854,6 +546,7 @@
           liquidity.</div>
       </div>
     </div>
+
     <!-- Urgency Call -->
     <div class="urgency-section">
       <div class="urgency-bg"></div>
@@ -880,185 +573,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Section 1: Market Map -->
-    <section class="section" id="section-market-map">
-      <h2>Market Map: <span class="gradient">Tokenised Treasury Platforms</span></h2>
-      <p><strong>No hype. Real platforms. Real yields.</strong> These institutional-grade issuers wrap U.S. Treasury
-        bills as blockchain tokens targeting 4.8%–5.3% net annual yield.</p>
-
-      <div class="platform-grid">
-        <div class="platform-card">
-          <div class="platform-name">Ondo Finance</div>
-          <div class="platform-tokens">USDY, OUSG</div>
-          <div class="platform-desc">Globally accessible tokenised Treasury suite. Largest deployed TVL, institutional
-            backing from Pagaya.</div>
-        </div>
-        <div class="platform-card">
-          <div class="platform-name">OpenEden</div>
-          <div class="platform-tokens">TBILL</div>
-          <div class="platform-desc">Hong Kong-licensed tokenised bills. Fast settlements, deep institutional liquidity
-            pools.</div>
-        </div>
-        <div class="platform-card">
-          <div class="platform-name">Matrixdock</div>
-          <div class="platform-tokens">STBT</div>
-          <div class="platform-desc">Singapore-based Treasury tokenisation. Premium institutional-grade compliance
-            framework.</div>
-        </div>
-        <div class="platform-card">
-          <div class="platform-name">Franklin Templeton</div>
-          <div class="platform-tokens">BUIDL</div>
-          <div class="platform-desc">Legacy asset manager entering blockchain. Direct Treasury access on Polygon.</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Section 2: How to Get Started (Beginner Mode) -->
-    <section class="section" id="getting-started">
-      <h2>How to Get <span class="gradient">Started — Beginner Mode</span></h2>
-      <p><strong>Goal:</strong> Hold a tokenised U.S. Treasury product in self-custody and earn yield passively. Follow
-        the steps exactly. No prior crypto experience required.</p>
-
-      <div class="steps-container">
-        <!-- Step 1 -->
-        <div class="step">
-          <div class="step-number">1</div>
-          <div class="step-title">Set up your hardware wallet (Ledger)</div>
-          <p class="step-desc"><strong>Why:</strong> Self-custody means you control the keys; exchanges can freeze funds
-            or fail.</p>
-          <ol class="step-desc">
-            <li>Download <em>Ledger Live</em> from the official site. Install and open it.</li>
-            <li>Initialize the Ledger device → create a new wallet → write the 24-word recovery phrase on paper (never
-              digital).</li>
-            <li>Update device firmware in Ledger Live.</li>
-            <li>In <em>My Ledger</em>, install the <strong>Ethereum</strong> app on the device.</li>
-            <li>(Optional) Connect Ledger to MetaMask so you can sign transactions with hardware security.</li>
-          </ol>
-          <p class="step-desc"><strong>Checklist:</strong> 24-word phrase saved offline • PIN set • Ethereum app
-            installed.</p>
-          <p class="step-desc"><strong>Safety:</strong> Keep ~$10–$30 worth of ETH for gas fees. Send it to your Ledger
-            address first.</p>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="step">
-          <div class="step-number">2</div>
-          <div class="step-title">Acquire USDC to fund the purchase</div>
-          <p class="step-desc"><strong>Why:</strong> Most tokenised Treasuries mint/redeem using USDC on Ethereum.</p>
-          <ol class="step-desc">
-            <li>On a reputable exchange (Coinbase, Kraken), buy <strong>USDC (Ethereum network)</strong>.</li>
-            <li>Withdraw USDC to your Ledger-controlled Ethereum address. <em>Paste the address exactly; send a small
-                test first.</em></li>
-            <li>Confirm USDC arrival in your wallet. If not visible, add the USDC contract manually.</li>
-          </ol>
-          <p class="step-desc"><strong>Gotcha:</strong> Ensure you selected <em>ERC-20 (Ethereum)</em> network. Wrong
-            network = permanent loss.</p>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="step">
-          <div class="step-number">3</div>
-          <div class="step-title">Create issuer account & complete KYC (e.g., Ondo USDY)</div>
-          <p class="step-desc"><strong>Why:</strong> These hold real T-bills; issuers must verify investor identity and
-            whitelist your wallet.</p>
-          <ol class="step-desc">
-            <li>Create an account on the issuer's site (e.g., Ondo Finance).</li>
-            <li>Complete identity verification (government ID + liveness check).</li>
-            <li>Submit your <strong>exact</strong> Ledger wallet address to be whitelisted.</li>
-            <li>Wait for "approved/whitelisted" status (usually quick during business hours).</li>
-          </ol>
-          <p class="step-desc"><strong>Note:</strong> Availability depends on your jurisdiction. U.S. persons may face
-            restrictions.</p>
-        </div>
-
-        <!-- Step 4 -->
-        <div class="step">
-          <div class="step-number">4</div>
-          <div class="step-title">Mint the Treasury token (e.g., USDY)</div>
-          <ol class="step-desc">
-            <li>Connect your wallet via MetaMask (linked to Ledger). Select <strong>Ethereum mainnet</strong>.</li>
-            <li>On the issuer's "Mint" page, pick the token (USDY), amount ($1,000+), and set source to
-              <strong>USDC</strong>.</li>
-            <li>First transaction: <strong>Approve</strong> USDC spend (one-time). Sign with Ledger.</li>
-            <li>Second transaction: <strong>Mint</strong> the token. Sign with Ledger.</li>
-            <li>Wait for confirmation; the token will appear in your wallet.</li>
-          </ol>
-          <p class="step-desc"><strong>Yield:</strong> No staking needed. Returns reflect in the token's redemption
-            value over time; you just hold.</p>
-        </div>
-
-        <!-- Step 5 -->
-        <div class="step">
-          <div class="step-number">5</div>
-          <div class="step-title">Redeem back to USDC (exit anytime)</div>
-          <ol class="step-desc">
-            <li>On the issuer's "Redeem" page, select your token balance (e.g., USDY) and target <strong>USDC</strong>.
-            </li>
-            <li>Confirm the whitelisted wallet will receive USDC (must match KYC address).</li>
-            <li>Sign the redemption transaction(s) with Ledger.</li>
-            <li>When USDC arrives, withdraw to your exchange → sell to fiat → transfer to your bank.</li>
-          </ol>
-          <p class="step-desc"><strong>Timing:</strong> On-chain is instant; fiat depends on your bank. No lock-ups
-            under normal conditions.</p>
-        </div>
-
-        <!-- Step 6: Safety -->
-        <div class="step">
-          <div class="step-number" style="background: linear-gradient(135deg, #ff9933 0%, #ffaa55 100%);">!</div>
-          <div class="step-title">Safety, Costs & Common Gotchas</div>
-          <ul class="step-desc">
-            <li><strong>Network correctness:</strong> Always use <em>Ethereum (ERC-20)</em> for USDC unless the issuer
-              explicitly supports another chain.</li>
-            <li><strong>Gas budget:</strong> Keep a small ETH buffer for approvals, mint, and redeem transactions.</li>
-            <li><strong>Whitelisting:</strong> Redemptions require the same whitelisted address used at KYC time.</li>
-            <li><strong>Impostor contracts:</strong> Add token contracts only from the issuer's official UI/docs, never
-              third-party.</li>
-            <li><strong>Tax:</strong> AU/NZ treatment varies. Keep timestamps, transaction hashes, and issuer
-              statements.</li>
-            <li><strong>Off-ramp:</strong> Your exchange must support your bank region (AUD/NZD) for smooth cash-out.
-            </li>
-          </ul>
-        </div>
-
-        <!-- Step 7: FAQ -->
-        <div class="step">
-          <div class="step-number" style="background: linear-gradient(135deg, #cc99ff 0%, #dd99ff 100%);">?</div>
-          <div class="step-title">Beginner FAQ</div>
-          <ul class="step-desc">
-            <li><strong>Do I need to stake USDY?</strong> No. Just holding reflects the yield via the issuer's
-              mechanism.</li>
-            <li><strong>Can I lose funds?</strong> Smart-contract, issuer, and custody risks exist. Use official UIs and
-              hardware wallets.</li>
-            <li><strong>US person?</strong> Check issuer eligibility rules; additional restrictions may apply.</li>
-            <li><strong>Which chain?</strong> Use the chain the issuer supports (usually Ethereum mainnet for USDY).
-            </li>
-            <li><strong>How long for KYC approval?</strong> Usually hours to 1 business day. Faster during weekday
-              business hours.</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Specs / Minimums -->
-      <div class="specs-bar">
-        <div class="spec-item">
-          <div class="spec-label">Minimum Entry</div>
-          <div class="spec-value">$1,000 USD</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-label">Maximum Entry</div>
-          <div class="spec-value">No Cap</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-label">Custody</div>
-          <div class="spec-value">Self-custody (Ledger)</div>
-        </div>
-        <div class="spec-item">
-          <div class="spec-label">Total Fees</div>
-          <div class="spec-value">Gas + Issuer %</div>
-        </div>
-      </div>
-    </section>
 
     <!-- Footer -->
     <div class="footer-section">
