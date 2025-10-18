@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import os, sys, json, math, logging, time
+import os, sys, json, math, logging, time, re
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Tuple, List
 from io import StringIO
+from html import escape
 
 import requests
 import pandas as pd
@@ -70,8 +71,9 @@ MAX_TREND_PENALTY = 10.0
 
 DEFAULT_OUTPUT_HTML = os.getenv("OUTPUT_HTML", "dashboard.html")
 DEFAULT_OUTPUT_JSON = os.getenv("OUTPUT_JSON", "gauge.json")
+DEFAULT_OUTPUT_YIELDS = os.getenv("OUTPUT_YIELDS_JSON", "yields.json")
 
-USER_AGENT = {"User-Agent": "game-over-gauge/2.4 (+local)"}
+USER_AGENT = {"User-Agent": "game-over-gauge/2.6 (+local)"}
 
 # =========================
 # Gauge bands
@@ -93,6 +95,15 @@ def getenv_float(name: str, default: Optional[float]) -> Optional[float]:
         return default
     try:
         return float(v)
+    except Exception:
+        return default
+
+def getenv_int(name: str, default: Optional[int]) -> Optional[int]:
+    v = os.getenv(name)
+    if v is None or v.strip() == "":
+        return default
+    try:
+        return int(v)
     except Exception:
         return default
 
@@ -214,10 +225,6 @@ DEEPSEEK_RETRIES = int(os.getenv("DEEPSEEK_RETRIES", "2"))
 DEEPSEEK_REQUIRE = os.getenv("DEEPSEEK_REQUIRE", "true").lower() in ("1","true","yes","y")
 
 def _sdk_generate_comment(api_key: str, score: float, band_name: str, penalty: float, components: List[Dict[str, object]]) -> str:
-    """
-    Use OpenAI SDK against DeepSeek's OpenAI-compatible endpoint.
-    """
-    # Compact component summary for the prompt
     comp_lines = []
     for c in components:
         try:
@@ -252,9 +259,6 @@ def _sdk_generate_comment(api_key: str, score: float, band_name: str, penalty: f
     return " ".join(content.split())
 
 def _rest_generate_comment(api_key: str, score: float, band_name: str, penalty: float, components: List[Dict[str, object]]) -> str:
-    """
-    REST fallback (curl-equivalent) if SDK is unavailable. Uses /chat/completions.
-    """
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
@@ -311,7 +315,31 @@ def _rest_generate_comment(api_key: str, score: float, band_name: str, penalty: 
     raise RuntimeError(last_err or "Unknown DeepSeek REST failure")
 
 # =========================
-# HTML template
+# Explanation rendering (NEW)
+# =========================
+def explanation_to_html(raw: str) -> str:
+    """
+    Reflow messy newline-laden text into clean HTML paragraphs:
+      - Convert CRLF to LF
+      - Collapse spaces/tabs
+      - Limit blank lines
+      - Split by double newlines into paragraphs
+      - Single newlines become spaces within a paragraph
+      - HTML-escape content
+    """
+    s = str(raw or "")
+    s = s.replace("\r\n", "\n")
+    s = re.sub(r"[ \t]+", " ", s)
+    s = re.sub(r"\n{3,}", "\n\n", s)
+    s = s.strip()
+    if not s:
+        return "<p></p>"
+    paragraphs = [re.sub(r"\n+", " ", p).strip() for p in s.split("\n\n")]
+    paragraphs = [p for p in paragraphs if p]
+    return "".join(f"<p>{escape(p)}</p>" for p in paragraphs)
+
+# =========================
+# HTML template (UPDATED)
 # =========================
 def html_template() -> Template:
     return Template(r"""
@@ -319,37 +347,217 @@ def html_template() -> Template:
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Game Over Gauge</title>
+  <title>Game Over Gauge Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
-    :root { --needle-deg: {{ needle_deg }}deg; }
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; margin: 20px; color:#111; }
-    .wrap { max-width: 1180px; margin: 0 auto; }
-    .top { display:flex; gap:28px; align-items:flex-start; flex-wrap:wrap; }
-    .panel { flex:1 1 360px; }
+    :root { 
+      --needle-deg: {{ needle_deg }}deg;
+      --navy: #0f1419;
+      --dark-bg: #0a0e12;
+      --card-bg: #131820;
+      --accent: #00d4ff;
+      --success: #00ff88;
+      --border: #1a2332;
+    }
 
-    .gbox { position:relative; width: 560px; max-width: 100%; }
-    .gtitle { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-    svg { display:block; width:100%; height:auto; }
+    * { box-sizing: border-box; }
 
-    .needle { transform-origin: 280px 240px; transform: rotate(var(--needle-deg)); }
-    .hub { fill:#111; }
-    .band-stroke { stroke:#ffffff; stroke-width:2; }
+    body { 
+      font-family: 'Inter', 'Helvetica Neue', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      margin: 0;
+      padding: 0;
+      color: #e8e9eb;
+      background: transparent;
+    }
 
-    .tick text { font-size: 11px; fill:#444; }
-    .bandlbl { font-size: 12px; fill:#111; opacity:.95; }
+    .wrap { 
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0;
+    }
 
-    .score { font-size: 36px; font-weight: 800; line-height:1; }
-    .badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#fff; margin-left:8px; }
-    .muted { color:#555; font-size:12px; }
-    .explain { margin-top:10px; font-size:14px; line-height:1.5; white-space:pre-wrap; }
-    .source { margin-top:6px; font-size:12px; color:#6b7280; }
+    .top { 
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
 
-    table { border-collapse: collapse; width: 100%; margin-top: 18px; }
-    th, td { border:1px solid #e5e7eb; padding:8px; font-size: 14px; }
-    th { background:#f7f7f7; text-align:left; }
-    .meta { color:#555; font-size: 12px; margin-top:8px; }
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .panel { 
+      flex: 1 1 360px;
+    }
+
+    .gbox { 
+      position: relative;
+      width: 560px;
+      max-width: 100%;
+    }
+
+    .gtitle { 
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+
+    svg { 
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .needle { 
+      transform-origin: 280px 240px;
+      transform: rotate(var(--needle-deg));
+    }
+
+    .hub { 
+      fill: #00d4ff;
+    }
+
+    .band-stroke { 
+      stroke: #1a2332;
+      stroke-width: 2;
+    }
+
+    .tick text { 
+      font-size: 11px;
+      fill: #8b95a5;
+    }
+
+    .bandlbl { 
+      font-size: 12px;
+      fill: #e8e9eb;
+      opacity: 0.9;
+      font-weight: 600;
+    }
+
+    .score { 
+      font-size: 48px;
+      font-weight: 900;
+      line-height: 1;
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .badge {
+      -webkit-text-fill-color: var(--navy);
+      color: var(--navy);
+      -webkit-background-clip: initial;
+      background-clip: initial;
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-left: 12px;
+      vertical-align: middle;
+    }
+
+    .badge.cautious { background: var(--success); }
+    .badge.risky { background: #fbbf24; }
+    .badge.crash { background: #ff6b6b; }
+
+    .muted { 
+      color: #8b95a5;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* UPDATED: clean paragraph rendering (no pre-wrap) */
+    .explain { 
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #a8b5c4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .explain p { margin: 0 0 10px 0; }
+    .explain p:last-child { margin-bottom: 0; }
+
+    .source { 
+      margin-top: 12px;
+      font-size: 12px;
+      color: #6b7a8b;
+    }
+
+    .source strong { color: var(--accent); }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 900;
+      margin: 40px 0 24px 0;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    table { 
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background: rgba(19, 24, 32, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    th, td { 
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    th { 
+      background: rgba(0, 212, 255, 0.1);
+      text-align: left;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    td { color: #a8b5c4; }
+
+    tr:hover { background: rgba(0, 212, 255, 0.05); }
+
+    tr td:first-child {
+      font-weight: 600;
+      color: #e8e9eb;
+    }
+
+    .meta { 
+      color: #6b7a8b;
+      font-size: 12px;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    .sr-only { 
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 768px) {
+      .top { flex-direction: column; }
+      .gbox { width: 100%; }
+      .score { font-size: 36px; }
+      h2 { font-size: 20px; }
+      table { font-size: 13px; }
+      th, td { padding: 10px 12px; }
+    }
   </style>
 </head>
 <body>
@@ -384,9 +592,9 @@ def html_template() -> Template:
           {% endfor %}
 
           <g class="needle">
-            <line x1="280" y1="240" x2="280" y2="60" stroke="#111" stroke-width="3"/>
-            <circle class="hub" cx="280" cy="240" r="7"/>
-            <circle cx="280" cy="240" r="11" fill="none" stroke="#fff" stroke-width="3"/>
+            <line x1="280" y1="240" x2="280" y2="60" stroke="#00d4ff" stroke-width="4"/>
+            <circle class="hub" cx="280" cy="240" r="8"/>
+            <circle cx="280" cy="240" r="13" fill="none" stroke="#00d4ff" stroke-width="2" opacity="0.5"/>
           </g>
         </svg>
 
@@ -396,18 +604,25 @@ def html_template() -> Template:
       <div class="panel">
         <div class="score">
           {{ total_score|round(1) }}%
-          <span class="badge" style="background: {{ band_color }}">{{ band_name }}</span>
+          <span class="badge {{ badge_class }}">{{ band_name }}</span>
         </div>
         <div class="muted">As of {{ timestamp }} (UTC). Trend penalty applied: {{ trend_penalty|round(1) }} pts.</div>
-        <div class="explain">{{ explanation }}</div>
+        <!-- UPDATED: explanation rendered as sanitized paragraphs -->
+        <div class="explain">{{ explanation_html | safe }}</div>
         <div class="source">explanation_source: <strong>{{ explanation_source }}</strong></div>
       </div>
     </div>
 
-    <h2>Components</h2>
+    <h2>Risk Components Breakdown</h2>
     <table>
       <thead>
-        <tr><th>Indicator</th><th>Latest</th><th>5D Δ</th><th>Score (0–100)</th><th>Weight</th></tr>
+        <tr>
+          <th>Indicator</th>
+          <th>Latest</th>
+          <th>5D Δ</th>
+          <th>Score (0–100)</th>
+          <th>Weight</th>
+        </tr>
       </thead>
       <tbody>
       {% for row in rows %}
@@ -416,7 +631,7 @@ def html_template() -> Template:
           <td>{{ row.latest }}</td>
           <td>{{ row.change }}</td>
           <td>{{ row.score|round(1) }}</td>
-          <td>{{ (row.weight*100)|round(0) }}%</td>
+          <td>{{ (row.weight*100)|round(1) }}%</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -486,6 +701,172 @@ def fetch_term_premium_any(fred_key: str) -> Tuple[pd.DataFrame, str]:
     except Exception as e:
         logging.info(f"T10Y2Y proxy unavailable: {e}")
         raise RuntimeError("All term premium sources failed")
+
+# =========================
+# Yields catalog
+# =========================
+def _apr_from_env(var: str) -> Optional[int]:
+    v = getenv_int(var, None)
+    if v is None:
+        return None
+    return max(0, v)
+
+def _safe_get(d: Dict, key: str, default=None):
+    return d.get(key) if isinstance(d, dict) else default
+
+def _load_yields_overrides(path: str) -> Optional[Dict]:
+    if not path:
+        return None
+    if not os.path.exists(path):
+        logging.warning("YIELDS_CONFIG path does not exist: %s", path)
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
+        try:
+            import yaml  # type: ignore
+            return yaml.safe_load(text)
+        except Exception:
+            logging.warning("YIELDS_CONFIG is not valid JSON and PyYAML not available.")
+            return None
+    except Exception as e:
+        logging.warning("Failed to read YIELDS_CONFIG: %s", e)
+        return None
+
+def _default_yields_catalog(as_of_utc: str) -> Dict:
+    def mk(name, product, access, chain, docs, kyc=True,
+           min_initial_usd=None, min_instant_usd=None, min_non_instant_mint_usd=None,
+           min_subsequent_usd=None, notes=None, apr_bps_env=None):
+        apr_bps = _apr_from_env(apr_bps_env) if apr_bps_env else None
+        out = {
+            "name": name,
+            "product": product,
+            "access": access,
+            "chain": chain if isinstance(chain, list) else [chain],
+            "kyc_required": bool(kyc),
+            "docs": docs,
+        }
+        if apr_bps is not None:
+            out["apr_bps"] = apr_bps
+        if min_initial_usd is not None:
+            out["min_initial_usd"] = int(min_initial_usd)
+        if min_instant_usd is not None:
+            out["min_instant_usd"] = int(min_instant_usd)
+        if min_non_instant_mint_usd is not None:
+            out["min_non_instant_mint_usd"] = int(min_non_instant_mint_usd)
+        if min_subsequent_usd is not None:
+            out["min_subsequent_usd"] = int(min_subsequent_usd)
+        if notes:
+            out["notes"] = notes
+        return out
+
+    issuers = [
+        mk(
+            name="Ondo", product="USDY",
+            access="Non-US retail (KYC + wallet whitelist)",
+            chain=["Ethereum","Bridges/Solana/L2"],
+            docs="https://docs.ondo.finance/general-access-products/usdy/faq/eligibility",
+            kyc=True, min_initial_usd=500, apr_bps_env="APR_BPS_ONDO_USDY"
+        ),
+        mk(
+            name="Ondo", product="OUSG",
+            access="Qualified/accredited investors",
+            chain=["Ethereum","Layer2"],
+            docs="https://docs.ondo.finance/qualified-access-products/ousg/instant-limits",
+            kyc=True, min_instant_usd=5000, min_non_instant_mint_usd=100000,
+            apr_bps_env="APR_BPS_ONDO_OUSG"
+        ),
+        mk(
+            name="OpenEden", product="TBILL",
+            access="Global (KYC + wallet whitelist)",
+            chain=["Ethereum"],
+            docs="https://docs.openeden.com/tbill/faq",
+            kyc=True, min_initial_usd=100000, min_subsequent_usd=1000,
+            apr_bps_env="APR_BPS_OPENEDEN_TBILL"
+        ),
+        mk(
+            name="Matrixdock", product="STBT",
+            access="Accredited/Professional investors",
+            chain=["Ethereum"],
+            docs="https://forum.arbitrum.foundation/t/matrixdock-stbt-step-application/23584",
+            kyc=True, min_initial_usd=100000,
+            apr_bps_env="APR_BPS_MATRIXDOCK_STBT"
+        ),
+        mk(
+            name="Franklin Templeton", product="BUIDL/FOBXX",
+            access="Institutional/accredited",
+            chain=["Public chain"],
+            docs="https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX",
+            kyc=True, apr_bps_env="APR_BPS_FRANKLIN_BUIDL"
+        ),
+        mk(
+            name="Maple Finance", product="Cash Management (UST bills)",
+            access="DAOs/funds; US accredited",
+            chain=["Ethereum"],
+            docs="https://maple.finance/insights/maple-cash-management-opens-to-us-investors",
+            kyc=True, apr_bps_env="APR_BPS_MAPLE_CASH",
+            notes="Targets ~1M UST yield minus fees."
+        ),
+        mk(
+            name="Superstate", product="USTB",
+            access="Institutional-leaning",
+            chain=["Ethereum"],
+            docs="https://superstate.co/",
+            kyc=True, apr_bps_env="APR_BPS_SUPERSTATE_USTB"
+        ),
+    ]
+    return {"as_of_utc": as_of_utc, "issuers": issuers}
+
+def _merge_yields(base: Dict, override: Dict) -> Dict:
+    if not override or "issuers" not in override:
+        return base
+    by_key = {(i.get("name"), i.get("product")): i for i in base.get("issuers", [])}
+    for item in override.get("issuers", []):
+        key = (item.get("name"), item.get("product"))
+        if key in by_key:
+            by_key[key].update({k: v for k, v in item.items() if v is not None})
+        else:
+            by_key[key] = item
+    merged = []
+    seen = set()
+    for i in base.get("issuers", []):
+        key = (i.get("name"), i.get("product"))
+        merged.append(by_key[key])
+        seen.add(key)
+    for key, val in by_key.items():
+        if key not in seen:
+            merged.append(val)
+    return {"as_of_utc": base.get("as_of_utc"), "issuers": merged}
+
+def build_yields_payload() -> Dict:
+    ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    base = _default_yields_catalog(ts)
+    cfg_path = os.getenv("YIELDS_CONFIG", "").strip()
+    if cfg_path:
+        ovr = _load_yields_overrides(cfg_path)
+        if ovr:
+            try:
+                merged = _merge_yields(base, ovr)
+                logging.info("Applied YIELDS_CONFIG override: %s (issuers: %d)", cfg_path, len(merged.get("issuers", [])))
+                return merged
+            except Exception as e:
+                logging.warning("Failed to merge YIELDS_CONFIG: %s", e)
+    return base
+
+def write_yields_json(path: str) -> Dict:
+    payload = build_yields_payload()
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+        logging.info("Wrote yields catalog JSON: %s (issuers=%d)", path, len(payload.get("issuers", [])))
+    except Exception as e:
+        logging.error("Failed to write yields JSON: %s", e)
+        raise
+    return payload
 
 # =========================
 # Main
@@ -608,9 +989,16 @@ def main():
     band = band_for(total_score)
     band_name = band["name"]; band_color = band["color"]
 
+    # Badge class mapping for dark template
+    if band_name in ("Safe", "Cautious"):
+        badge_class = "cautious"
+    elif band_name == "Risky":
+        badge_class = "risky"
+    else:
+        badge_class = "crash"  # Nearly Crash / Game Over
+
     ds_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
     explanation_source = "local"
-    explanation_text: str
 
     if not ds_key:
         logging.warning("DEEPSEEK_API_KEY not set; using local fallback text.")
@@ -618,7 +1006,6 @@ def main():
     else:
         try:
             if HAS_OPENAI:
-                print("Calling deepseek..............................")
                 explanation_text = _sdk_generate_comment(ds_key, total_score, band_name, penalty, rows)
                 explanation_source = "deepseek-sdk"
             else:
@@ -635,6 +1022,9 @@ def main():
             explanation_text = _fallback_summary(total_score, penalty)
             explanation_source = "local"
 
+    # NEW: pre-render sanitized paragraph HTML
+    explanation_html = explanation_to_html(explanation_text)
+
     out_obj = {
         "timestamp_utc": ts,
         "total_score_percent": round(total_score, 1),
@@ -646,6 +1036,7 @@ def main():
     }
     print(json.dumps(out_obj, indent=2))
 
+    # Write gauge JSON and HTML
     with open(DEFAULT_OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(out_obj, f, indent=2)
 
@@ -656,7 +1047,9 @@ def main():
         needle_deg=needle_rotation_deg(total_score),
         band_paths=paths, tick_marks=tick_marks,
         band_name=band_name, band_color=band_color,
-        explanation=explanation_text, explanation_source=explanation_source,
+        explanation_html=explanation_html,  # <- updated
+        explanation_source=explanation_source,
+        badge_class=badge_class,
     )
     with open(DEFAULT_OUTPUT_HTML, "w", encoding="utf-8") as f:
         f.write(html)
@@ -665,6 +1058,12 @@ def main():
         "Gauge: %.1f%% (%s) | explainer=%s | JSON=%s | HTML=%s",
         total_score, band_name, explanation_source, DEFAULT_OUTPUT_JSON, DEFAULT_OUTPUT_HTML
     )
+
+    # Also write yields catalog JSON every run
+    try:
+        write_yields_json(DEFAULT_OUTPUT_YIELDS)
+    except Exception:
+        logging.exception("yields.json generation failed but continuing build.")
 
 if __name__ == "__main__":
     try:

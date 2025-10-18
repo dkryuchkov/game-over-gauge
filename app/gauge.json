@@ -1,35 +1,35 @@
 {
-  "timestamp_utc": "2025-10-17 07:19:11",
-  "total_score_percent": 30.4,
+  "timestamp_utc": "2025-10-18 10:39:48",
+  "total_score_percent": 32.0,
   "trend_penalty": 0.0,
   "band": "Cautious",
   "components": [
     {
       "name": "US 10Y Nominal (DGS10, %)",
-      "latest": "4.05%",
-      "change": "0.00%",
-      "score": 34.444444444444436,
+      "latest": "3.99%",
+      "change": "-0.06%",
+      "score": 33.111111111111114,
       "weight": 0.2
     },
     {
       "name": "US 10Y Real (DFII10, %)",
-      "latest": "1.76%",
-      "change": "0.01%",
-      "score": 58.666666666666664,
+      "latest": "1.71%",
+      "change": "-0.04%",
+      "score": 56.99999999999999,
       "weight": 0.25
     },
     {
       "name": "High Yield OAS (%, BofA ICE)",
-      "latest": "2.95%",
-      "change": "-0.23%",
-      "score": 0.0,
+      "latest": "3.04%",
+      "change": "-0.14%",
+      "score": 0.6666666666666672,
       "weight": 0.3
     },
     {
       "name": "VIX (index)",
-      "latest": "20.6",
-      "change": "-1.0",
-      "score": 26.181818181818183,
+      "latest": "25.3",
+      "change": "3.6",
+      "score": 40.33333333333333,
       "weight": 0.15
     },
     {
@@ -40,6 +40,6 @@
       "weight": 0.1
     }
   ],
-  "explanation": "The market is in a cautious state, with a gauge score of 30.4%. This is primarily due to low-risk corporate bonds and a still-elevated fear index, though longer-term interest rates are relatively stable. Investors should consider maintaining a diversified portfolio and ensuring adequate liquidity in this environment.",
+  "explanation": "Markets are in a cautious state with mixed signals. Bond yields are slightly lower, but high-yield credit stress remains elevated and stock volatility is high. This suggests a fragile environment where investors should focus on diversification and maintaining liquidity.",
   "explanation_source": "deepseek-sdk"
 }

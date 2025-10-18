@@ -1,0 +1,61 @@
+{
+  "as_of_utc": "2025-10-18T00:00:00Z",
+  "issuers": [
+    {
+      "name": "Ondo",
+      "product": "USDY",
+      "access": "Global retail (KYC + wallet whitelist)",
+      "chain": ["Ethereum", "Solana", "Layer2"],
+      "kyc_required": true,
+      "min_initial_usd": 500,
+      "docs": "https://docs.ondo.finance/general-access-products/usdy/faq/eligibility"
+    },
+    {
+      "name": "Ondo",
+      "product": "OUSG",
+      "access": "Qualified/accredited",
+      "chain": ["Ethereum", "Layer2"],
+      "kyc_required": true,
+      "min_instant_usd": 5000,
+      "min_non_instant_mint_usd": 100000,
+      "min_non_instant_redeem_usd": 50000,
+      "docs": "https://docs.ondo.finance/qualified-access-products/ousg/instant-limits"
+    },
+    {
+      "name": "OpenEden",
+      "product": "TBILL",
+      "access": "Global investors (KYC + wallet whitelist)",
+      "chain": ["Ethereum"],
+      "kyc_required": true,
+      "min_initial_usd": 100000,
+      "min_subsequent_usd": 1000,
+      "docs": "https://docs.openeden.com/tbill/faq"
+    },
+    {
+      "name": "Matrixdock",
+      "product": "STBT",
+      "access": "Accredited/professional",
+      "chain": ["Ethereum"],
+      "kyc_required": true,
+      "min_initial_usd": 100000,
+      "docs": "https://forum.arbitrum.foundation/t/matrixdock-stbt-step-application/23584"
+    },
+    {
+      "name": "Franklin Templeton",
+      "product": "BUIDL/FOBXX",
+      "access": "Institutional/accredited",
+      "chain": ["Stellar", "Polygon"],
+      "kyc_required": true,
+      "docs": "https://www.franklintempleton.com/investments/options/money-market-funds/products/29386/SINGLCLASS/franklin-on-chain-u-s-government-money-fund/FOBXX"
+    },
+    {
+      "name": "Maple Finance",
+      "product": "Cash Management (UST bills)",
+      "access": "DAOs/funds; accredited",
+      "chain": ["Ethereum"],
+      "kyc_required": true,
+      "notes": "Targets 1-month UST yield minus 0.5% fees",
+      "docs": "https://maple.finance/insights/maple-cash-management-opens-to-us-investors"
+    }
+  ]
+}
